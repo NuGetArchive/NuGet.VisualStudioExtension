@@ -18,6 +18,7 @@ using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace NuGet.PackageManagement.PowerShellCmdlets
 {
@@ -34,6 +35,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         private bool _overwriteAll, _ignoreAll;
         internal const string PowerConsoleHostName = "Package Manager Host";
         private IHost host;
+        private Dispatcher _dispatcher;
 
         public NuGetPowerShellBaseCommand()
         {
@@ -41,6 +43,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             _packageManagementContext = this.host.PackageManagementContext;
             _resourceRepositoryProvider = _packageManagementContext.SourceRepositoryProvider;
             _solutionManager = _packageManagementContext.VsSolutionManager;
+            _dispatcher = Dispatcher.CurrentDispatcher;
         }
 
         public NuGetPackageManager PackageManager
@@ -475,7 +478,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         void INuGetProjectContext.Log(MessageLevel level, string message, params object[] args)
         {
             string formattedMessage = String.Format(CultureInfo.CurrentCulture, message, args);
-            LogCore(level, formattedMessage);
+            _dispatcher.Invoke(() => LogCore(level, formattedMessage));
         }
 
         FileConflictAction INuGetProjectContext.ResolveFileConflict(string message)
