@@ -35,5 +35,41 @@ namespace NuGet.PackageManagement.VisualStudio
         {
             throw new NotImplementedException();
         }
+
+        void IPackageRestoreManager.EnableCurrentSolutionForRestore(bool fromActivation)
+        {
+            //throw new NotImplementedException();
+        }
+
+        bool IPackageRestoreManager.IsCurrentSolutionEnabledForRestore
+        {
+            get { return true; }
+        }
+
+        event EventHandler<PackagesMissingStatusEventArgs> IPackageRestoreManager.PackagesMissingStatusChanged
+        {
+            add {  }
+            remove { }
+        }
+
+        void IPackageRestoreManager.RaisePackagesMissingEventForSolution()
+        {
+            //throw new NotImplementedException();
+        }
+
+        Task<bool> IPackageRestoreManager.RestoreMissingPackages(System.Collections.Generic.IEnumerable<Packaging.PackageReference> packageReferences)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<bool> IPackageRestoreManager.RestoreMissingPackages(NuGetProject nuGetProject)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<bool> IPackageRestoreManager.RestoreMissingPackagesInSolution()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

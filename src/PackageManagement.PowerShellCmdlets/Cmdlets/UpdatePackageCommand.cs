@@ -116,7 +116,8 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                     string framework = project.GetMetadata<NuGetFramework>(NuGetProjectMetadataKeys.TargetFramework).Framework;
                     IEnumerable<PackageReference> installedPackages = Project.GetInstalledPackages();
                     IEnumerable<PackageIdentity> remoteUpdates = GetPackageUpdates(installedPackages, project, IncludePrerelease.IsPresent, Safe.IsPresent);
-                    ExecuteUpdates(remoteUpdates, project);
+                    UpdatePackages(remoteUpdates, project);
+                    WaitAndLogFromMessageQueue();
                 }
             }
             else
@@ -148,7 +149,8 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                         else
                         {
                             IEnumerable<PackageIdentity> remoteUpdates = GetPackageUpdates(installedPackages, project, IncludePrerelease.IsPresent, Safe.IsPresent);
-                            ExecuteUpdates(remoteUpdates, project);
+                            UpdatePackages(remoteUpdates, project);
+                            WaitAndLogFromMessageQueue();
                         }
                     }
                 }
@@ -164,6 +166,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                 {
                     IEnumerable<PackageReference> installedPackages = Project.GetInstalledPackages();
                     UpdatePackages(installedPackages.Select(v => v.PackageIdentity), project);
+                    WaitAndLogFromMessageQueue();
                 }
             }
             else
@@ -181,21 +184,24 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                     {
                         List<PackageIdentity> identities = new List<PackageIdentity>() { installedPackage.PackageIdentity };
                         UpdatePackages(identities, project);
+                        WaitAndLogFromMessageQueue();
                     }
                 }
             }
         }
 
-        private void ExecuteUpdates(IEnumerable<PackageIdentity> updates, NuGetProject nuGetProject)
-        {
-            UpdatePackages(updates, nuGetProject);
-        }
-
         private async void UpdatePackages(IEnumerable<PackageIdentity> identities, NuGetProject project)
         {
-            foreach (PackageIdentity identity in identities)
+            try
             {
-                await InstallPackageByIdentityAsync(project, identity, ResolutionContext, this, WhatIf.IsPresent, Reinstall.IsPresent, UninstallContext);
+                foreach (PackageIdentity identity in identities)
+                {
+                    await InstallPackageByIdentityAsync(project, identity, ResolutionContext, this, WhatIf.IsPresent, Reinstall.IsPresent, UninstallContext);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogCore(MessageLevel.Error, ex.Message);
             }
             completeEvent.Set();
         }

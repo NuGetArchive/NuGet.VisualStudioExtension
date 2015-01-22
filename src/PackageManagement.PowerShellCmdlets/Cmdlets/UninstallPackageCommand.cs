@@ -1,4 +1,6 @@
-﻿using System.Management.Automation;
+﻿using NuGet.ProjectManagement;
+using System;
+using System.Management.Automation;
 
 namespace NuGet.PackageManagement.PowerShellCmdlets
 {
@@ -43,12 +45,20 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
             SubscribeToProgressEvents();
             UnInstallPackage();
+            WaitAndLogFromMessageQueue();
             UnsubscribeFromProgressEvents();
         }
 
         private async void UnInstallPackage()
         {
-            await UninstallPackageByIdAsync(Project, Id, UninstallContext, this, WhatIf.IsPresent);
+            try
+            {
+                await UninstallPackageByIdAsync(Project, Id, UninstallContext, this, WhatIf.IsPresent);
+            }
+            catch (Exception ex)
+            {
+                Log(MessageLevel.Error, ex.Message);
+            }
             completeEvent.Set();
         }
 

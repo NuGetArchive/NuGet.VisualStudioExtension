@@ -36,14 +36,22 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
             SubscribeToProgressEvents();
             SyncPackages(Projects, identity);
+            WaitAndLogFromMessageQueue();
             UnsubscribeFromProgressEvents();
         }
 
         private async void SyncPackages(IEnumerable<NuGetProject> projects, PackageIdentity identity)
         {
-            foreach (NuGetProject project in projects)
+            try
             {
-                await InstallPackageByIdentityAsync(project, identity, ResolutionContext, this, WhatIf.IsPresent);
+                foreach (NuGetProject project in projects)
+                {
+                    await InstallPackageByIdentityAsync(project, identity, ResolutionContext, this, WhatIf.IsPresent);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogCore(MessageLevel.Error, ex.Message);
             }
             completeEvent.Set();
         }

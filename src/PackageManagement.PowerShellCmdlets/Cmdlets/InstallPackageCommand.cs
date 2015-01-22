@@ -62,9 +62,16 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
         private async void InstallPackages(IEnumerable<PackageIdentity> identities)
         {
-            foreach (PackageIdentity identity in identities)
+            try
             {
-                await InstallPackageByIdentityAsync(Project, identity, ResolutionContext, this, WhatIf.IsPresent, Force.IsPresent, UninstallContext);
+                foreach (PackageIdentity identity in identities)
+                {
+                    await InstallPackageByIdentityAsync(Project, identity, ResolutionContext, this, WhatIf.IsPresent, Force.IsPresent, UninstallContext);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogCore(MessageLevel.Error, ex.Message);
             }
             completeEvent.Set();
         }

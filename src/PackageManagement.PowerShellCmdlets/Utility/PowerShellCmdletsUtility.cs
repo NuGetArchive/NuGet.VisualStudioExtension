@@ -66,6 +66,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             {
                 //Task<NuGetVersion> task = resource.GetLatestVersion(packageId, includePrerelease, false, CancellationToken.None);
                 //NuGetVersion latestVersion = task.Result;
+                //identity = new PackageIdentity(packageId, latestVersion);
                 var task = resource.GetMetadata(packageId, includePrerelease, false, CancellationToken.None);
                 UIPackageMetadata metadata = task.Result
                     .Where(p => string.Equals(p.Identity.Id, packageId, StringComparison.OrdinalIgnoreCase))

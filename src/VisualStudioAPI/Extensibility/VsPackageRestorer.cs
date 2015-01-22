@@ -11,6 +11,7 @@ using System.Linq;
 using NuGet.Configuration;
 using NuGet.PackageManagement.VisualStudio;
 using NuGet.PackageManagement;
+using NuGet.ProjectManagement;
 
 namespace NuGet.VisualStudio
 {
@@ -45,8 +46,7 @@ namespace NuGet.VisualStudio
         public void RestorePackages(Project project)
         {
             NuGetPackageManager packageManager = new NuGetPackageManager(_sourceRepositoryProvider, _settings, _solutionManager);
-
-            _restoreManager.RestoreMissingPackages().Wait();
+            _restoreManager.RestoreMissingPackages(new List<Packaging.PackageReference>() { }).Wait();
         }
     }
 }
