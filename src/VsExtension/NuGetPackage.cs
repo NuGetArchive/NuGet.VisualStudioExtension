@@ -493,7 +493,8 @@ namespace NuGetVSExtension
             var uiContext = uiContextFactory.Create(new [] { nugetProject });
 
             var uiFactory = ServiceLocator.GetInstance<INuGetUIFactory>();
-            var uiController = uiFactory.Create(new [] { nugetProject } );
+            var projectContext = ServiceLocator.GetInstance<NuGetUIProjectContext>();
+            var uiController = uiFactory.Create(new[] { nugetProject }, uiContext, projectContext);
 
             var model = new PackageManagerModel(uiController, uiContext);
             var vsWindowSearchHostfactory = ServiceLocator.GetGlobalService<SVsWindowSearchHostFactory, IVsWindowSearchHostFactory>();
@@ -631,7 +632,7 @@ namespace NuGetVSExtension
             var uiContext = uiContextFactory.Create(projects);
 
             var uiFactory = ServiceLocator.GetInstance<INuGetUIFactory>();
-            var uiController = uiFactory.Create(projects);
+            var uiController = uiFactory.Create(projects, uiContext, ServiceLocator.GetInstance<NuGetUIProjectContext>());
 
             var model = new PackageManagerModel(uiController, uiContext);
             var vsWindowSearchHostfactory = ServiceLocator.GetGlobalService<SVsWindowSearchHostFactory, IVsWindowSearchHostFactory>();

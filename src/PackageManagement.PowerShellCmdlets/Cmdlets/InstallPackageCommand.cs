@@ -55,11 +55,34 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             IEnumerable<PackageIdentity> identities = GetPackageIdentities();
 
             SubscribeToProgressEvents();
-            foreach (PackageIdentity identity in identities)
+            InstallPackages(identities);
+            while(true)
             {
-                InstallPackageByIdentity(Project, identity, ResolutionContext, this, WhatIf.IsPresent, Force.IsPresent, UninstallContext);
+                int index = System.Threading.WaitHandle.WaitAny(new System.Threading.WaitHandle[] { completeEvent, queueSemaphone });
+                if (index == 0)
+                {
+                    break;
+                }
+                else
+                {
+                    lock (this)
+                    {
+                        var messageFromQueue = logQueue.First();
+                        logQueue.RemoveAt(0);
+                        LogCore(messageFromQueue.Item1, messageFromQueue.Item2);
+                    }
+                }
             }
             UnsubscribeFromProgressEvents();
+        }
+
+        private async void InstallPackages(IEnumerable<PackageIdentity> identities)
+        {
+            foreach (PackageIdentity identity in identities)
+            {
+                await InstallPackageByIdentityAsync(Project, identity, ResolutionContext, this, WhatIf.IsPresent, Force.IsPresent, UninstallContext);
+            }
+            completeEvent.Set();
         }
 
         private static bool isNetworkAvailable()

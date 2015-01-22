@@ -1,4 +1,5 @@
-﻿using NuGet.Client;
+﻿using Microsoft.VisualStudio.Shell;
+using NuGet.Client;
 using NuGet.Client.VisualStudio;
 using NuGet.Configuration;
 using NuGet.Packaging;
@@ -16,6 +17,7 @@ using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace NuGet.PackageManagement.PowerShellCmdlets
 {
@@ -31,9 +33,11 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         private ProgressRecordCollection _progressRecordCache;
         private bool _overwriteAll, _ignoreAll;
         internal const string PowerConsoleHostName = "Package Manager Host";
+        private Dispatcher _dispatcher;
 
         public NuGetPowerShellBaseCommand()
         {
+            _dispatcher = Dispatcher.CurrentDispatcher;
         }
 
         public NuGetPackageManager PackageManager
@@ -391,35 +395,6 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             }
         }
 
-        protected virtual void LogCore(MessageLevel level, string formattedMessage)
-        {
-            // Temporary hack for working around the PSInvalidOperationException
-            // The WriteObject and WriteError methods cannot be called from outside the overrides 
-            // of the BeginProcessing, ProcessRecord, and EndProcessing methods, and they can only be called from within the same thread.
-            try
-            {
-                switch (level)
-                {
-                    case MessageLevel.Debug:
-                        WriteVerbose(formattedMessage);
-                        break;
-
-                    case MessageLevel.Warning:
-                        WriteWarning(formattedMessage);
-                        break;
-
-                    case MessageLevel.Info:
-                        WriteLine(formattedMessage);
-                        break;
-
-                    case MessageLevel.Error:
-                        WriteError(formattedMessage);
-                        break;
-                }
-            }
-            catch (PSInvalidOperationException) { }
-        }
-
         [SuppressMessage("Microsoft.Usage", "CA2201:DoNotRaiseReservedExceptionTypes", Justification = "This exception is passed to PowerShell. We really don't care about the type of exception here.")]
         protected void WriteError(string message)
         {
@@ -484,13 +459,40 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
         #endregion Logging
 
-        void INuGetProjectContext.Log(MessageLevel level, string message, params object[] args)
+        public virtual void Log(MessageLevel level, string message, params object[] args)
         {
-            string formattedMessage = String.Format(CultureInfo.CurrentCulture, message, args);
-            LogCore(level, formattedMessage);
         }
 
-        FileConflictAction INuGetProjectContext.ResolveFileConflict(string message)
+        protected virtual void LogCore(MessageLevel level, string formattedMessage)
+        {
+            // Temporary hack for working around the PSInvalidOperationException
+            // The WriteObject and WriteError methods cannot be called from outside the overrides 
+            // of the BeginProcessing, ProcessRecord, and EndProcessing methods, and they can only be called from within the same thread.
+            //try
+            //{
+            switch (level)
+            {
+                case MessageLevel.Debug:
+                    WriteVerbose(formattedMessage);
+                    break;
+
+                case MessageLevel.Warning:
+                    WriteWarning(formattedMessage);
+                    break;
+
+                case MessageLevel.Info:
+                    WriteLine(formattedMessage);
+                    break;
+
+                case MessageLevel.Error:
+                    WriteError(formattedMessage);
+                    break;
+            }
+            //}
+            //catch (PSInvalidOperationException) { }
+        }
+
+        public FileConflictAction ResolveFileConflict(string message)
         {
             if (_overwriteAll)
             {
