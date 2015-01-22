@@ -1,9 +1,7 @@
-﻿using NuGet.Client;
-using NuGet.PackagingCore;
+﻿using NuGet.PackagingCore;
 using NuGet.ProjectManagement;
 using NuGet.Resolver;
 using System;
-using System.Collections.Generic;
 using System.Management.Automation;
 using System.Threading.Tasks;
 
@@ -83,38 +81,23 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             }
         }
 
-        protected List<Tuple<MessageLevel, string>> logQueue = new List<Tuple<MessageLevel, string>>();
-
-        public System.Threading.ManualResetEvent completeEvent = new System.Threading.ManualResetEvent(false);
-
-        public System.Threading.Semaphore queueSemaphone = new System.Threading.Semaphore(0, Int32.MaxValue);
-
-        public override void Log(MessageLevel level, string message, params object[] args)
-        {
-            lock (this)
-            {
-                logQueue.Add(Tuple.Create(level, message));
-            }
-            queueSemaphone.Release();
-        }
-
-        protected void InstallPackageById(NuGetProject project, string packageId, ResolutionContext resolutionContext, INuGetProjectContext projectContext, bool isPreview, bool isForce = false, UninstallationContext uninstallContext = null)
+        protected async Task InstallPackageById(NuGetProject project, string packageId, ResolutionContext resolutionContext, INuGetProjectContext projectContext, bool isPreview, bool isForce = false, UninstallationContext uninstallContext = null)
         {
             if (isPreview)
             {
                 if (isForce)
                 {
-                    PackageManager.PreviewUninstallPackageAsync(project, packageId, uninstallContext, projectContext).Wait();
+                    await PackageManager.PreviewUninstallPackageAsync(project, packageId, uninstallContext, projectContext);
                 }
-                PackageManager.PreviewInstallPackageAsync(project, packageId, resolutionContext, projectContext).Wait();
+                await PackageManager.PreviewInstallPackageAsync(project, packageId, resolutionContext, projectContext);
             }
             else
             {
                 if (isForce)
                 {
-                    PackageManager.UninstallPackageAsync(project, packageId, uninstallContext, projectContext).Wait();
+                    await PackageManager.UninstallPackageAsync(project, packageId, uninstallContext, projectContext);
                 }
-                PackageManager.InstallPackageAsync(project, packageId, resolutionContext, projectContext).Wait();
+                await PackageManager.InstallPackageAsync(project, packageId, resolutionContext, projectContext);
             }
         }
 

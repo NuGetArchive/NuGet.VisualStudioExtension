@@ -1,7 +1,4 @@
-﻿using NuGet.Client;
-using NuGet.Resolver;
-using System;
-using System.Management.Automation;
+﻿using System.Management.Automation;
 
 namespace NuGet.PackageManagement.PowerShellCmdlets
 {
@@ -45,14 +42,20 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             CheckForSolutionOpen();
 
             SubscribeToProgressEvents();
-            UninstallPackageById(Project, Id, ResolutionContext, this, WhatIf.IsPresent);
+            UnInstallPackage();
             UnsubscribeFromProgressEvents();
+        }
+
+        private async void UnInstallPackage()
+        {
+            await UninstallPackageByIdAsync(Project, Id, UninstallContext, this, WhatIf.IsPresent);
+            completeEvent.Set();
         }
 
         /// <summary>
         /// Resolution Context for the command
         /// </summary>
-        public UninstallationContext ResolutionContext
+        public UninstallationContext UninstallContext
         {
             get
             {

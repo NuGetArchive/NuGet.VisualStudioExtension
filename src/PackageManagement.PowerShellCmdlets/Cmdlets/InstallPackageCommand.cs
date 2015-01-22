@@ -56,23 +56,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
             SubscribeToProgressEvents();
             InstallPackages(identities);
-            while(true)
-            {
-                int index = System.Threading.WaitHandle.WaitAny(new System.Threading.WaitHandle[] { completeEvent, queueSemaphone });
-                if (index == 0)
-                {
-                    break;
-                }
-                else
-                {
-                    lock (this)
-                    {
-                        var messageFromQueue = logQueue.First();
-                        logQueue.RemoveAt(0);
-                        LogCore(messageFromQueue.Item1, messageFromQueue.Item2);
-                    }
-                }
-            }
+            WaitAndLogFromMessageQueue();
             UnsubscribeFromProgressEvents();
         }
 

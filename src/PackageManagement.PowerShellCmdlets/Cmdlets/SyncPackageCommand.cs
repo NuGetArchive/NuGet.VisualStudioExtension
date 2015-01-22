@@ -1,12 +1,10 @@
-﻿using NuGet.Client;
-using NuGet.PackagingCore;
+﻿using NuGet.PackagingCore;
 using NuGet.ProjectManagement;
 using NuGet.Versioning;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
-
 
 namespace NuGet.PackageManagement.PowerShellCmdlets
 {
@@ -37,11 +35,17 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             PackageIdentity identity = GetPackageIdentity();
 
             SubscribeToProgressEvents();
-            foreach (NuGetProject project in Projects)
-            {
-                InstallPackageByIdentity(project, identity, ResolutionContext, this, WhatIf.IsPresent);
-            }
+            SyncPackages(Projects, identity);
             UnsubscribeFromProgressEvents();
+        }
+
+        private async void SyncPackages(IEnumerable<NuGetProject> projects, PackageIdentity identity)
+        {
+            foreach (NuGetProject project in projects)
+            {
+                await InstallPackageByIdentityAsync(project, identity, ResolutionContext, this, WhatIf.IsPresent);
+            }
+            completeEvent.Set();
         }
 
         /// <summary>

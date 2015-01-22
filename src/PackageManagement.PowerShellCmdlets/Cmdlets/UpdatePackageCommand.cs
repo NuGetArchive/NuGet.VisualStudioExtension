@@ -1,5 +1,4 @@
-﻿using NuGet.Client;
-using NuGet.Frameworks;
+﻿using NuGet.Frameworks;
 using NuGet.Packaging;
 using NuGet.PackagingCore;
 using NuGet.ProjectManagement;
@@ -143,7 +142,8 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                             }
 
                             PackageIdentity update = new PackageIdentity(Id, _nugetVersion);
-                            InstallPackageByIdentity(project, update, ResolutionContext, this, WhatIf.IsPresent);
+                            List<PackageIdentity> identities = new List<PackageIdentity>() { update };
+                            UpdatePackages(identities, project);
                         }
                         else
                         {
@@ -163,10 +163,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                 foreach (NuGetProject project in Projects)
                 {
                     IEnumerable<PackageReference> installedPackages = Project.GetInstalledPackages();
-                    foreach (PackageReference package in installedPackages)
-                    {
-                        InstallPackageByIdentity(project, package.PackageIdentity, ResolutionContext, this, WhatIf.IsPresent, true, UninstallContext);
-                    }
+                    UpdatePackages(installedPackages.Select(v => v.PackageIdentity), project);
                 }
             }
             else
@@ -182,7 +179,8 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                     }
                     else
                     {
-                        InstallPackageByIdentity(project, installedPackage.PackageIdentity, ResolutionContext, this, WhatIf.IsPresent, true, UninstallContext);
+                        List<PackageIdentity> identities = new List<PackageIdentity>() { installedPackage.PackageIdentity };
+                        UpdatePackages(identities, project);
                     }
                 }
             }
@@ -190,10 +188,16 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
         private void ExecuteUpdates(IEnumerable<PackageIdentity> updates, NuGetProject nuGetProject)
         {
-            foreach (PackageIdentity identity in updates)
+            UpdatePackages(updates, nuGetProject);
+        }
+
+        private async void UpdatePackages(IEnumerable<PackageIdentity> identities, NuGetProject project)
+        {
+            foreach (PackageIdentity identity in identities)
             {
-                InstallPackageByIdentity(nuGetProject, identity, ResolutionContext, this, WhatIf.IsPresent);
+                await InstallPackageByIdentityAsync(project, identity, ResolutionContext, this, WhatIf.IsPresent, Reinstall.IsPresent, UninstallContext);
             }
+            completeEvent.Set();
         }
 
         private void ParseUserInputForVersion()
