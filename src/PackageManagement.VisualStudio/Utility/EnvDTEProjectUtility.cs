@@ -1149,7 +1149,6 @@ namespace NuGet.PackageManagement.VisualStudio
             ThreadHelper.ThrowIfNotOnUIThread();
 
             bool isClr = false;
-
             // always return false here until we fix clr support issue
             // Null properties on the DTE project item are a common source of bugs, make sure everything is non-null before attempting this check.    
             if (envDTEProject != null
