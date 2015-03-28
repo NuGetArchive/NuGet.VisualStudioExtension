@@ -202,12 +202,6 @@
       <Project>{eea49a74-6efc-410e-9745-bad367ac151d}</Project>
       <Name>VisualStudio14</Name>
     </ProjectReference>
-    <ProjectReference Include="..\VisualStudioAPI\VisualStudioAPI.csproj">
-      <Project>{E5556BC6-A7FD-4D8E-8A7D-7648DF1D7471}</Project>
-      <Name>VisualStudioAPI</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
-    </ProjectReference>
     <ProjectReference Include="..\VsConsole\Console.Types\Console.Types.csproj">
       <Project>{6fd11460-39a3-4a10-ba63-7541b0a7d053}</Project>
       <Name>Console.Types</Name>
