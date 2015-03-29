@@ -39,6 +39,7 @@ namespace NuGetVSExtension
                 throw new ArgumentNullException("projects");
             }
 
+            // TODO: pass the legacy context
             NuGetPackageManager packageManager = new NuGetPackageManager(_repositoryProvider, _settings, _solutionManager);
             UIActionEngine actionEngine = new UIActionEngine(_repositoryProvider, packageManager);
 

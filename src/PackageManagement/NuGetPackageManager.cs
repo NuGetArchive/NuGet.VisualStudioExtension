@@ -1,5 +1,6 @@
 ﻿using NuGet.Configuration;
 using NuGet.Frameworks;
+using NuGet.PackageManagement.Interop.V2;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.ProjectManagement;
@@ -32,7 +33,9 @@ namespace NuGet.PackageManagement
         public FolderNuGetProject PackagesFolderNuGetProject { get; set; }
 
         public SourceRepository PackagesFolderSourceRepository { get; set; }
-      
+
+        private readonly LegacyModeContext _legacyContext;
+
         /// <summary>
         /// To construct a NuGetPackageManager that does not need a SolutionManager like NuGet.exe
         /// </summary>
@@ -51,6 +54,15 @@ namespace NuGet.PackageManagement
         /// To construct a NuGetPackageManager with a mandatory SolutionManager lke VS
         /// </summary>
         public NuGetPackageManager(ISourceRepositoryProvider sourceRepositoryProvider, ISettings settings, ISolutionManager solutionManager/*, IPackageResolver packageResolver */)
+            : this(sourceRepositoryProvider, settings, solutionManager, null)
+        {
+
+        }
+
+        /// <summary>
+        /// To construct a NuGetPackageManager with a mandatory SolutionManager lke VS
+        /// </summary>
+        public NuGetPackageManager(ISourceRepositoryProvider sourceRepositoryProvider, ISettings settings, ISolutionManager solutionManager, LegacyModeContext legacyContext)
         {
             InitializeMandatory(sourceRepositoryProvider);
             if (settings == null)
@@ -58,10 +70,12 @@ namespace NuGet.PackageManagement
                 throw new ArgumentNullException("settings");
             }
 
-            if(solutionManager == null)
+            if (solutionManager == null)
             {
                 throw new ArgumentNullException("solutionManager");
             }
+
+            _legacyContext = legacyContext;
 
             Settings = settings;
             SolutionManager = solutionManager;
@@ -619,6 +633,13 @@ namespace NuGet.PackageManagement
                 return new NuGetProjectAction[] { action };
             }
 
+            // For legacy mode just return the basic action
+            if (CompatUtility.LegacyModeEnabled)
+            {
+                var action = NuGetProjectAction.CreateInstallProjectAction(packageIdentity, primarySources.First());
+                return new NuGetProjectAction[] { action };
+            }
+
             var projectInstalledPackageReferences = await nuGetProject.GetInstalledPackagesAsync(token);
             var oldListOfInstalledPackages = projectInstalledPackageReferences.Select(p => p.PackageIdentity);
             if(oldListOfInstalledPackages.Any(p => p.Equals(packageIdentity)))
@@ -1002,30 +1023,46 @@ namespace NuGet.PackageManagement
             HashSet<PackageIdentity> packageWithDirectoriesToBeDeleted = new HashSet<PackageIdentity>(PackageIdentity.Comparer);
             try
             {
-                await nuGetProject.PreProcessAsync(nuGetProjectContext, token);
-                foreach (NuGetProjectAction nuGetProjectAction in nuGetProjectActions)
+                if (UseLegacyMode(nuGetProject))
                 {
-                    executedNuGetProjectActions.Push(nuGetProjectAction);
-                    if (nuGetProjectAction.NuGetProjectActionType == NuGetProjectActionType.Uninstall)
-                    {
-                        await ExecuteUninstallAsync(nuGetProject, nuGetProjectAction.PackageIdentity, packageWithDirectoriesToBeDeleted, nuGetProjectContext, token);
-                    }
-                    else
-                    {
-                        using (var targetPackageStream = new MemoryStream())
-                        {
-                            await PackageDownloader.GetPackageStream(nuGetProjectAction.SourceRepository, nuGetProjectAction.PackageIdentity, targetPackageStream, token);
-                            await ExecuteInstallAsync(nuGetProject, nuGetProjectAction.PackageIdentity, targetPackageStream, packageWithDirectoriesToBeDeleted, nuGetProjectContext, token);
-                        }
-                    }
+                    // TODO: implement this fully
+                    LegacyExecuteContext executeContext = new LegacyExecuteContext();
+                    executeContext.AllowFallbackRepositories = true;
 
-                    string toFromString = nuGetProjectAction.NuGetProjectActionType == NuGetProjectActionType.Install ? Strings.To : Strings.From;
-                    nuGetProjectContext.Log(MessageLevel.Info, Strings.SuccessfullyExecutedPackageAction,
-                        nuGetProjectAction.NuGetProjectActionType.ToString().ToLowerInvariant(), nuGetProjectAction.PackageIdentity.ToString(), toFromString + " " + nuGetProject.GetMetadata<string>(NuGetProjectMetadataKeys.Name));
+                    foreach (var action in nuGetProjectActions)
+                    {
+                        var source = new string[] { action.SourceRepository.PackageSource.Source };
+
+                        CompatUtility.ExecuteNuGetProjectAction(_legacyContext, executeContext, action.PackageIdentity, source);
+                    }
                 }
-                await nuGetProject.PostProcessAsync(nuGetProjectContext, token);
+                else
+                {
+                    await nuGetProject.PreProcessAsync(nuGetProjectContext, token);
+                    foreach (NuGetProjectAction nuGetProjectAction in nuGetProjectActions)
+                    {
+                        executedNuGetProjectActions.Push(nuGetProjectAction);
+                        if (nuGetProjectAction.NuGetProjectActionType == NuGetProjectActionType.Uninstall)
+                        {
+                            await ExecuteUninstallAsync(nuGetProject, nuGetProjectAction.PackageIdentity, packageWithDirectoriesToBeDeleted, nuGetProjectContext, token);
+                        }
+                        else
+                        {
+                            using (var targetPackageStream = new MemoryStream())
+                            {
+                                await PackageDownloader.GetPackageStream(nuGetProjectAction.SourceRepository, nuGetProjectAction.PackageIdentity, targetPackageStream, token);
+                                await ExecuteInstallAsync(nuGetProject, nuGetProjectAction.PackageIdentity, targetPackageStream, packageWithDirectoriesToBeDeleted, nuGetProjectContext, token);
+                            }
+                        }
 
-                await OpenReadmeFile(nuGetProjectContext, token);
+                        string toFromString = nuGetProjectAction.NuGetProjectActionType == NuGetProjectActionType.Install ? Strings.To : Strings.From;
+                        nuGetProjectContext.Log(MessageLevel.Info, Strings.SuccessfullyExecutedPackageAction,
+                            nuGetProjectAction.NuGetProjectActionType.ToString().ToLowerInvariant(), nuGetProjectAction.PackageIdentity.ToString(), toFromString + " " + nuGetProject.GetMetadata<string>(NuGetProjectMetadataKeys.Name));
+                    }
+                    await nuGetProject.PostProcessAsync(nuGetProjectContext, token);
+
+                    await OpenReadmeFile(nuGetProjectContext, token);
+                }
             }
             catch (Exception ex)
             {
@@ -1319,6 +1356,21 @@ namespace NuGet.PackageManagement
                     ideExecutionContext.IDEDirectInstall = null;
                 }
             }
+        }
+
+        /// <summary>
+        /// True if legacy mode is on and the project is not DNX
+        /// </summary>
+        private static bool UseLegacyMode(NuGetProject project)
+        {
+            bool b = false;
+
+            if (CompatUtility.LegacyModeEnabled && !(project is ProjectManagement.Projects.ProjectKNuGetProjectBase))
+            {
+                b = true;
+            }
+
+            return b;
         }
     }
 }

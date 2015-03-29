@@ -28,7 +28,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;STANDALONE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -323,6 +323,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\PackageManagement.Interop.V2\PackageManagement.Interop.V2.csproj">
+      <Project>{ee5681b2-9017-4467-b530-8bac1814a575}</Project>
+      <Name>PackageManagement.Interop.V2</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PackageManagement\PackageManagement.csproj">
       <Project>{1cb46687-b482-4f64-869a-ed5280badeb4}</Project>
       <Name>PackageManagement</Name>
