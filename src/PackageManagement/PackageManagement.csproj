@@ -125,6 +125,11 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NuGet2\Core\Core.csproj">
+      <Project>{f879f274-efa0-4157-8404-33a19b4e6aec}</Project>
+      <Name>Core</Name>
+      <Aliases>Legacy</Aliases>
+    </ProjectReference>
     <ProjectReference Include="..\NuGet2\VisualStudio\VisualStudio.csproj">
       <Project>{6146ca62-cc16-422c-a105-3e81f7452aa6}</Project>
       <Name>VisualStudio</Name>
