@@ -24,6 +24,10 @@ namespace NuGet.PackageManagement.Interop.V2
 
         public bool AllowPrerelease { get; set; }
 
+        public IEnumerable<string> Sources { get; set; }
+
+        public string ProjectCustomName { get; set; }
+
         public LegacyExecuteContext()
         {
 

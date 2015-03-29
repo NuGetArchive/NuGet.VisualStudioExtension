@@ -6,6 +6,7 @@ using NuGet.Configuration;
 using NuGet.PackageManagement;
 using NuGet.PackageManagement.UI;
 using NuGet.Protocol.Core.Types;
+using NuGet.PackageManagement.Interop.V2;
 
 namespace NuGetVSExtension
 {
@@ -17,19 +18,22 @@ namespace NuGetVSExtension
         private readonly IPackageRestoreManager _restoreManager;
         private readonly IOptionsPageActivator _optionsPage;
         private readonly ISettings _settings;
+        private readonly ILegacyModeContextProvider _legacyContextProvider;
 
         [ImportingConstructor]
         public VisualStudioUIContextFactory([Import]ISourceRepositoryProvider repositoryProvider,
             [Import]ISolutionManager solutionManager,
             [Import]ISettings settings,
             [Import]IPackageRestoreManager packageRestoreManager,
-            [Import]IOptionsPageActivator optionsPage)
+            [Import]IOptionsPageActivator optionsPage,
+            [Import]ILegacyModeContextProvider legacyContextProvider)
         {
             _repositoryProvider = repositoryProvider;
             _solutionManager = solutionManager;
             _restoreManager = packageRestoreManager;
             _optionsPage = optionsPage;
             _settings = settings;
+            _legacyContextProvider = legacyContextProvider;
         }
 
         public INuGetUIContext Create(NuGetPackage package, IEnumerable<NuGet.ProjectManagement.NuGetProject> projects)
@@ -39,8 +43,11 @@ namespace NuGetVSExtension
                 throw new ArgumentNullException("projects");
             }
 
-            // TODO: pass the legacy context
-            NuGetPackageManager packageManager = new NuGetPackageManager(_repositoryProvider, _settings, _solutionManager);
+            NuGetPackageManager packageManager = new NuGetPackageManager(_repositoryProvider, 
+                _settings, 
+                _solutionManager,
+                _legacyContextProvider.GetContext());
+
             UIActionEngine actionEngine = new UIActionEngine(_repositoryProvider, packageManager);
 
             return new VisualStudioUIContext(

@@ -50,7 +50,7 @@ namespace NuGet.PackageManagement.Interop.V2
 
             if (version != null)
             {
-                legacyVersion = new Legacy.NuGet.SemanticVersion(version.Version, version.Release);
+                legacyVersion = Legacy.NuGet.SemanticVersion.Parse(version.ToString());
             }
 
             return legacyVersion;
@@ -79,9 +79,9 @@ namespace NuGet.PackageManagement.Interop.V2
 
         public static void ExecuteNuGetProjectAction(LegacyModeContext modeContext, LegacyExecuteContext executionContext, PackageIdentity package, IEnumerable<string> sources)
         {
-            // var repo = CreateAggregateRepositoryFromSources(context, sources);
+            var repo = CreateAggregateRepositoryFromSources(modeContext, sources);
 
-            var packageManager = modeContext.PackageManagerFactory.CreatePackageManager();
+            var packageManager = modeContext.PackageManagerFactory.CreatePackageManager(repo, executionContext.AllowFallbackRepositories);
 
             packageManager.WhatIf = executionContext.WhatIf;
 
