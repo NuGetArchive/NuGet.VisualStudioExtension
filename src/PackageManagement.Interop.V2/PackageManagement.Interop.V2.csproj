@@ -55,6 +55,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.Xml.Linq" />
@@ -65,7 +66,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CompatUtility.cs" />
-    <Compile Include="LegacyCompatContext.cs" />
+    <Compile Include="ILegacyModeContextProvider.cs" />
+    <Compile Include="LegacyModeContext.cs" />
+    <Compile Include="LegacyModeContextProvider.cs" />
     <Compile Include="LegacyExecuteContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
