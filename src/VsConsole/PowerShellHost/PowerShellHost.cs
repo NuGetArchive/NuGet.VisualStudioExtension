@@ -18,6 +18,7 @@ using NuGet.Configuration;
 using NuGet.ProjectManagement;
 using NuGet.Packaging.Core;
 using NuGet.Packaging;
+using NuGet.PackageManagement.Interop.V2;
 
 namespace NuGetConsole.Host.PowerShell.Implementation
 {
@@ -64,9 +65,10 @@ namespace NuGetConsole.Host.PowerShell.Implementation
             _settings = ServiceLocator.GetInstance<ISettings>();
             _dte = ServiceLocator.GetInstance<DTE>();
             _sourceControlManagerProvider = ServiceLocator.GetInstanceSafe<ISourceControlManagerProvider>();
+            var legacyProvider = ServiceLocator.GetInstanceSafe<ILegacyModeContextProvider>();
             _commonOperations = ServiceLocator.GetInstanceSafe<ICommonOperations>();
             _packageManagementContext = new PackageManagementContext(_sourceRepositoryProvider, _solutionManager,
-                _settings, _sourceControlManagerProvider, _commonOperations);
+                _settings, _sourceControlManagerProvider, _commonOperations, legacyProvider);
 
             _name = name;
             IsCommandEnabled = true;

@@ -53,9 +53,9 @@
           <Project>{3dd213f7-999b-4c15-9560-bf9c96cb8c52}</Project>
           <Name>VisualStudio12</Name>
         </ProjectReference>
-	      <Reference Include="Microsoft.VisualStudio.VCProjectEngine, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      	  <EmbedInteropTypes>True</EmbedInteropTypes>
-    	  </Reference>
+        <Reference Include="Microsoft.VisualStudio.VCProjectEngine, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+          <EmbedInteropTypes>True</EmbedInteropTypes>
+        </Reference>
       </ItemGroup>
     </When>
     <When Condition="$(VisualStudioVersion)=='14.0'">
@@ -66,9 +66,9 @@
           <Project>{eea49a74-6efc-410e-9745-bad367ac151d}</Project>
           <Name>VisualStudio14</Name>
         </ProjectReference>
-	      <Reference Include="Microsoft.VisualStudio.VCProjectEngine, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      	  <EmbedInteropTypes>True</EmbedInteropTypes>
-    	  </Reference>
+        <Reference Include="Microsoft.VisualStudio.VCProjectEngine, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+          <EmbedInteropTypes>True</EmbedInteropTypes>
+        </Reference>
         <Reference Include="Microsoft.VisualStudio.ProjectSystem.V14Only">
           <HintPath>..\..\lib\VS14\Microsoft.VisualStudio.ProjectSystem.V14Only.dll</HintPath>
         </Reference>
@@ -126,35 +126,15 @@
     <Reference Include="NuGet.Frameworks">
       <HintPath>..\..\packages\NuGet.Frameworks.3.0.0-beta\lib\net45\NuGet.Frameworks.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.PackageManagement">
-      <HintPath>..\..\packages\NuGet.PackageManagement.3.0.0-beta\lib\net45\NuGet.PackageManagement.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.PackageManagement.UI">
-      <HintPath>..\..\packages\NuGet.PackageManagement.UI.3.0.0-beta\lib\net45\NuGet.PackageManagement.UI.dll</HintPath>
-    </Reference>
     <Reference Include="NuGet.Packaging">
       <HintPath>..\..\packages\NuGet.Packaging.3.0.0-beta\lib\net45\NuGet.Packaging.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Packaging.Core">
       <HintPath>..\..\packages\NuGet.Packaging.Core.3.0.0-beta\lib\net45\NuGet.Packaging.Core.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.Packaging.Core.Types">
+    <Reference Include="NuGet.Packaging.Core.Types, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\NuGet.Packaging.Core.Types.3.0.0-beta\lib\net45\NuGet.Packaging.Core.Types.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.ProjectManagement">
-      <HintPath>..\..\packages\NuGet.PackageManagement.3.0.0-beta\lib\net45\NuGet.ProjectManagement.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Protocol.Core.Types">
-      <HintPath>..\..\packages\NuGet.Protocol.Core.Types.3.0.0-beta\lib\net45\NuGet.Protocol.Core.Types.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Protocol.Core.v2">
-      <HintPath>..\..\packages\NuGet.Protocol.Core.v2.3.0.0-beta\lib\net45\NuGet.Protocol.Core.v2.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Protocol.Core.v3">
-      <HintPath>..\..\packages\NuGet.Protocol.Core.v3.3.0.0-beta\lib\net45\NuGet.Protocol.Core.v3.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Protocol.VisualStudio">
-      <HintPath>..\..\packages\NuGet.Protocol.VisualStudio.3.0.0-beta\lib\net45\NuGet.Protocol.VisualStudio.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="NuGet.Resolver">
       <HintPath>..\..\packages\NuGet.Resolver.3.0.0-beta\lib\net45\NuGet.Resolver.dll</HintPath>
@@ -289,6 +269,37 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Strings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NuGet2\Core\Core.csproj">
+      <Project>{f879f274-efa0-4157-8404-33a19b4e6aec}</Project>
+      <Name>Core</Name>
+      <Aliases>Legacy</Aliases>
+    </ProjectReference>
+    <ProjectReference Include="..\PackageManagement.UI\PackageManagement.UI.csproj">
+      <Project>{538adefd-2170-40a9-a2c5-ec8369cfe490}</Project>
+      <Name>PackageManagement.UI</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PackageManagement\PackageManagement.csproj">
+      <Project>{1cb46687-b482-4f64-869a-ed5280badeb4}</Project>
+      <Name>PackageManagement</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ProjectManagement\ProjectManagement.csproj">
+      <Project>{fcd39e83-d8de-4401-ab12-d824ac2fe07b}</Project>
+      <Name>ProjectManagement</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Protocol\NuGet.Protocol.Core.Types\NuGet.Protocol.Core.Types.csproj">
+      <Project>{bfb81923-4673-4130-93ed-a96376b7cd27}</Project>
+      <Name>NuGet.Protocol.Core.Types</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Protocol\NuGet.Protocol.Core.v2\NuGet.Protocol.Core.v2.csproj">
+      <Project>{661a8286-1899-4cbe-b4ee-8b1c707ae205}</Project>
+      <Name>NuGet.Protocol.Core.v2</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Protocol\NuGet.Protocol.VisualStudio\NuGet.Protocol.VisualStudio.csproj">
+      <Project>{6fbb60bf-40f6-4afc-8d3b-127f928e1345}</Project>
+      <Name>NuGet.Protocol.VisualStudio</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\..\build\sign.targets" />

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NuGet.Protocol.Core.Types;
+using NuGet.PackageManagement.Interop.V2;
 
 namespace NuGet.PackageManagement
 {
@@ -19,13 +20,15 @@ namespace NuGet.PackageManagement
             ISolutionManager solutionManager,
             ISettings settings,
             ISourceControlManagerProvider sourceControlManagerProvider,
-            ICommonOperations commonOperations)
+            ICommonOperations commonOperations,
+            ILegacyModeContextProvider legacyModeContextProvider)
         {
             SourceRepositoryProvider = sourceRepositoryProvider;
             VsSolutionManager = solutionManager;
             Settings = settings;
             SourceControlManagerProvider = sourceControlManagerProvider;
             CommonOperations = commonOperations;
+            LegacyModeContextProvider = legacyModeContextProvider;
         }
 
         /// <summary>
@@ -52,5 +55,10 @@ namespace NuGet.PackageManagement
         /// CommonOperations to openfile, and so on
         /// </summary>
         public ICommonOperations CommonOperations { get; private set; }
+
+        /// <summary>
+        /// Legacy mode support
+        /// </summary>
+        public ILegacyModeContextProvider LegacyModeContextProvider { get; private set; }
     }
 }

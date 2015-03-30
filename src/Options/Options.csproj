@@ -32,35 +32,11 @@
     <Reference Include="NuGet.Frameworks">
       <HintPath>..\..\packages\NuGet.Frameworks.3.0.0-beta\lib\net45\NuGet.Frameworks.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.PackageManagement">
-      <HintPath>..\..\packages\NuGet.PackageManagement.3.0.0-beta\lib\net45\NuGet.PackageManagement.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.PackageManagement.UI">
-      <HintPath>..\..\packages\NuGet.PackageManagement.UI.3.0.0-beta\lib\net45\NuGet.PackageManagement.UI.dll</HintPath>
-    </Reference>
     <Reference Include="NuGet.Packaging">
       <HintPath>..\..\packages\NuGet.Packaging.3.0.0-beta\lib\net45\NuGet.Packaging.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Packaging.Core">
       <HintPath>..\..\packages\NuGet.Packaging.Core.3.0.0-beta\lib\net45\NuGet.Packaging.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Packaging.Core.Types">
-      <HintPath>..\..\packages\NuGet.Packaging.Core.Types.3.0.0-beta\lib\net45\NuGet.Packaging.Core.Types.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.ProjectManagement">
-      <HintPath>..\..\packages\NuGet.PackageManagement.3.0.0-beta\lib\net45\NuGet.ProjectManagement.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Protocol.Core.Types">
-      <HintPath>..\..\packages\NuGet.Protocol.Core.Types.3.0.0-beta\lib\net45\NuGet.Protocol.Core.Types.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Protocol.Core.v2">
-      <HintPath>..\..\packages\NuGet.Protocol.Core.v2.3.0.0-beta\lib\net45\NuGet.Protocol.Core.v2.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Protocol.Core.v3">
-      <HintPath>..\..\packages\NuGet.Protocol.Core.v3.3.0.0-beta\lib\net45\NuGet.Protocol.Core.v3.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Protocol.VisualStudio">
-      <HintPath>..\..\packages\NuGet.Protocol.VisualStudio.3.0.0-beta\lib\net45\NuGet.Protocol.VisualStudio.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Resolver">
       <HintPath>..\..\packages\NuGet.Resolver.3.0.0-beta\lib\net45\NuGet.Resolver.dll</HintPath>
@@ -150,9 +126,17 @@
     </CodeAnalysisDictionary>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\PackageManagement.UI\PackageManagement.UI.csproj">
+      <Project>{538adefd-2170-40a9-a2c5-ec8369cfe490}</Project>
+      <Name>PackageManagement.UI</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PackageManagement.VisualStudio\PackageManagement.VisualStudio.csproj">
       <Project>{306cddfa-ff0b-4299-930c-9ec6c9308160}</Project>
       <Name>PackageManagement.VisualStudio</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Protocol\NuGet.Protocol.Core.Types\NuGet.Protocol.Core.Types.csproj">
+      <Project>{bfb81923-4673-4130-93ed-a96376b7cd27}</Project>
+      <Name>NuGet.Protocol.Core.Types</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

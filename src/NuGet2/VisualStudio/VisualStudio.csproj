@@ -280,6 +280,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Console.Types\Console.Types.csproj">
+      <Project>{453d07e9-85d9-472e-8716-971e058ee3bf}</Project>
+      <Name>Console.Types</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Core\Core.csproj">
       <Project>{F879F274-EFA0-4157-8404-33A19B4E6AEC}</Project>
       <Name>Core</Name>
@@ -297,10 +301,6 @@
       <Project>{EEA49A74-6EFC-410E-9745-BAD367AC151D}</Project>
       <Name>VisualStudio14</Name>
       <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\VsConsole\Console.Types\Console.Types.csproj">
-      <Project>{6FD11460-39A3-4A10-BA63-7541B0A7D053}</Project>
-      <Name>Console.Types</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -27,10 +27,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\NuGet.Frameworks.3.0.0-beta\lib\net45\NuGet.Frameworks.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.PackageManagement">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\NuGet.PackageManagement.3.0.0-beta\lib\net45\NuGet.PackageManagement.dll</HintPath>
-    </Reference>
     <Reference Include="NuGet.Packaging">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\NuGet.Packaging.3.0.0-beta\lib\net45\NuGet.Packaging.dll</HintPath>
@@ -38,15 +34,9 @@
     <Reference Include="NuGet.Packaging.Core">
       <HintPath>..\..\..\packages\NuGet.Packaging.Core.3.0.0-beta\lib\net45\NuGet.Packaging.Core.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.Packaging.Core.Types">
+    <Reference Include="NuGet.Packaging.Core.Types, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\NuGet.Packaging.Core.Types.3.0.0-beta\lib\net45\NuGet.Packaging.Core.Types.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.ProjectManagement">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\NuGet.PackageManagement.3.0.0-beta\lib\net45\NuGet.ProjectManagement.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Protocol.Core.Types">
-      <HintPath>..\..\..\packages\NuGet.Protocol.Core.Types.3.0.0-beta\lib\net45\NuGet.Protocol.Core.Types.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="NuGet.Resolver">
       <SpecificVersion>False</SpecificVersion>
@@ -107,6 +97,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\PackageManagement\PackageManagement.csproj">
+      <Project>{1cb46687-b482-4f64-869a-ed5280badeb4}</Project>
+      <Name>PackageManagement</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\..\..\build\sign.targets" />

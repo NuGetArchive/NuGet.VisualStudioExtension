@@ -278,8 +278,9 @@
     <Reference Include="NuGet.Packaging.Core">
       <HintPath>..\..\packages\NuGet.Packaging.Core.3.0.0-beta\lib\net45\NuGet.Packaging.Core.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.Packaging.Core.Types">
+    <Reference Include="NuGet.Packaging.Core.Types, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\NuGet.Packaging.Core.Types.3.0.0-beta\lib\net45\NuGet.Packaging.Core.Types.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="NuGet.Resolver">
       <HintPath>..\..\packages\NuGet.Resolver.3.0.0-beta\lib\net45\NuGet.Resolver.dll</HintPath>

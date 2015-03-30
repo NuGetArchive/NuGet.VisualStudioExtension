@@ -25,23 +25,11 @@
     <Reference Include="NuGet.Frameworks">
       <HintPath>..\..\..\packages\NuGet.Frameworks.3.0.0-beta\lib\net45\NuGet.Frameworks.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.PackageManagement">
-      <HintPath>..\..\..\packages\NuGet.PackageManagement.3.0.0-beta\lib\net45\NuGet.PackageManagement.dll</HintPath>
-    </Reference>
     <Reference Include="NuGet.Packaging">
       <HintPath>..\..\..\packages\NuGet.Packaging.3.0.0-beta\lib\net45\NuGet.Packaging.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Packaging.Core">
       <HintPath>..\..\..\packages\NuGet.Packaging.Core.3.0.0-beta\lib\net45\NuGet.Packaging.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Packaging.Core.Types">
-      <HintPath>..\..\..\packages\NuGet.Packaging.Core.Types.3.0.0-beta\lib\net45\NuGet.Packaging.Core.Types.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.ProjectManagement">
-      <HintPath>..\..\..\packages\NuGet.PackageManagement.3.0.0-beta\lib\net45\NuGet.ProjectManagement.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Protocol.Core.Types">
-      <HintPath>..\..\..\packages\NuGet.Protocol.Core.Types.3.0.0-beta\lib\net45\NuGet.Protocol.Core.Types.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Resolver">
       <HintPath>..\..\..\packages\NuGet.Resolver.3.0.0-beta\lib\net45\NuGet.Resolver.dll</HintPath>
@@ -84,6 +72,10 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\PackageManagement\PackageManagement.csproj">
+      <Project>{1cb46687-b482-4f64-869a-ed5280badeb4}</Project>
+      <Name>PackageManagement</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Console.Types\Console.Types.csproj">
       <Project>{6FD11460-39A3-4A10-BA63-7541B0A7D053}</Project>
       <Name>Console.Types</Name>
