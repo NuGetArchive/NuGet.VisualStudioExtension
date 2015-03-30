@@ -33,6 +33,9 @@ namespace NuGet.PackageManagement.Interop.V2
 
         public string ProjectSafeName { get; set; }
 
+        public bool Force { get; set; }
+
+        public bool RemoveDependencies { get; set; }
 
         public ILogger Logger { get; set; }
 

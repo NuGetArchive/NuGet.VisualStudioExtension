@@ -263,6 +263,12 @@ namespace NuGet.PackageManagement
                 secondarySources = SourceRepositoryProvider.GetRepositories().Where(e => e.PackageSource.IsEnabled);
             }
 
+            if (UseLegacyMode(nuGetProject))
+            {
+                // TODO: is this hit?
+                throw new NotImplementedException("Implement legacy support");
+            }
+
             var projectInstalledPackageReferences = await nuGetProject.GetInstalledPackagesAsync(token);
             var oldListOfInstalledPackages = projectInstalledPackageReferences.Select(p => p.PackageIdentity);
 
@@ -383,7 +389,14 @@ namespace NuGet.PackageManagement
             {
                 throw new ArgumentNullException("primarySourceRepository");
             }
+
             var primarySources = new List<SourceRepository>() { primarySourceRepository };
+
+            if (UseLegacyMode(nuGetProject))
+            {
+                // TODO: is this hit?
+                throw new NotImplementedException("Implement legacy support");
+            }
 
             if (secondarySources == null)
             {
@@ -569,7 +582,7 @@ namespace NuGet.PackageManagement
             ResolutionContext resolutionContext, INuGetProjectContext nuGetProjectContext,
             SourceRepository primarySourceRepository, IEnumerable<SourceRepository> secondarySources, CancellationToken token)
         {
-            if (nuGetProject is ProjectManagement.Projects.ProjectKNuGetProjectBase)
+            if (nuGetProject is ProjectManagement.Projects.ProjectKNuGetProjectBase || CompatUtility.LegacyModeEnabled)
             {
                 var action = NuGetProjectAction.CreateInstallProjectAction(packageIdentity, primarySourceRepository);
                 return new NuGetProjectAction[] { action };
@@ -628,14 +641,7 @@ namespace NuGet.PackageManagement
             // TODO: BUGBUG: HACK: Multiple primary repositories is mainly intended for nuget.exe at the moment
             // The following special case for ProjectK is not correct, if they used nuget.exe
             // and multiple repositories in the -Source switch
-            if (nuGetProject is ProjectManagement.Projects.ProjectKNuGetProjectBase)
-            {
-                var action = NuGetProjectAction.CreateInstallProjectAction(packageIdentity, primarySources.First());
-                return new NuGetProjectAction[] { action };
-            }
-
-            // For legacy mode just return the basic action
-            if (CompatUtility.LegacyModeEnabled)
+            if (nuGetProject is ProjectManagement.Projects.ProjectKNuGetProjectBase || CompatUtility.LegacyModeEnabled)
             {
                 var action = NuGetProjectAction.CreateInstallProjectAction(packageIdentity, primarySources.First());
                 return new NuGetProjectAction[] { action };
@@ -956,7 +962,7 @@ namespace NuGet.PackageManagement
                 throw new InvalidOperationException(Strings.SolutionManagerNotAvailableForUninstall);
             }
 
-            if (nuGetProject is ProjectManagement.Projects.ProjectKNuGetProjectBase)
+            if (nuGetProject is ProjectManagement.Projects.ProjectKNuGetProjectBase || CompatUtility.LegacyModeEnabled)
             {
                 var action = NuGetProjectAction.CreateUninstallProjectAction(packageReference.PackageIdentity);
                 return new NuGetProjectAction[] { action };
@@ -1045,7 +1051,14 @@ namespace NuGet.PackageManagement
                             !StringComparer.OrdinalIgnoreCase.Equals(action.SourceRepository.PackageSource.Source, e.PackageSource.Source))
                             .Select(e => e.PackageSource.Source);
 
-                        CompatUtility.ExecuteNuGetProjectAction(_legacyContext, executeContext, new PackageIdentity[] { action.PackageIdentity });
+                        if (action.NuGetProjectActionType == NuGetProjectActionType.Install)
+                        {
+                            CompatUtility.ExecuteInstall(_legacyContext, executeContext, new PackageIdentity[] { action.PackageIdentity });
+                        }
+                        else if (action.NuGetProjectActionType == NuGetProjectActionType.Uninstall)
+                        {
+                            CompatUtility.ExecuteUninstall(_legacyContext, executeContext, new PackageIdentity[] { action.PackageIdentity });
+                        }
                     }
                 }
                 else
@@ -1105,6 +1118,13 @@ namespace NuGet.PackageManagement
         private async Task Rollback(NuGetProject nuGetProject, Stack<NuGetProjectAction> executedNuGetProjectActions, HashSet<PackageIdentity> packageWithDirectoriesToBeDeleted,
             INuGetProjectContext nuGetProjectContext, CancellationToken token)
         {
+
+            if (UseLegacyMode(nuGetProject))
+            {
+                // Rollbacks are handled by NuGet 2.*, not here
+                return;
+            }
+
             if (executedNuGetProjectActions.Count > 0)
             {
                 // Only print the rollback warning if we have something to rollback
@@ -1205,7 +1225,7 @@ namespace NuGet.PackageManagement
             MinClientVersionHandler.CheckMinClientVersion(packageStream, packageIdentity);
 
             packageWithDirectoriesToBeDeleted.Remove(packageIdentity);
-            await nuGetProject.InstallPackageAsync(packageIdentity, packageStream, nuGetProjectContext, token);            
+            await nuGetProject.InstallPackageAsync(packageIdentity, packageStream, nuGetProjectContext, token);
 
             // TODO: Consider using CancelEventArgs instead of a regular EventArgs??
             //if (packageOperationEventArgs.Cancel)

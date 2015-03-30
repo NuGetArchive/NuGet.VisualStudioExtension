@@ -77,13 +77,52 @@ namespace NuGet.PackageManagement.Interop.V2
             return DependencyVersion.Lowest;
         }
 
+        public static void ExecuteInstall(LegacyModeContext modeContext, LegacyExecuteContext executionContext, IEnumerable<PackageIdentity> packages)
+        {
+            var packageManager = CreatePackageManager(modeContext, executionContext);
+
+            var project = modeContext.SolutionManager.GetProject(executionContext.ProjectSafeName);
+
+            var projectManager = packageManager.GetProjectManager(project);
+
+            bool ignoreDependencies = executionContext.DependencyBehavior == DependencyBehavior.Ignore;
+
+            foreach (var package in packages)
+            {
+                bool allowPrerelease = executionContext.AllowPrerelease || (package.Version != null && package.Version.IsPrerelease);
+
+                packageManager.InstallPackage(projectManager, package.Id, GetVersion(package.Version), ignoreDependencies, allowPrerelease, executionContext.Logger);
+            }
+        }
+
+        public static void ExecuteUninstall(LegacyModeContext modeContext, LegacyExecuteContext executionContext, IEnumerable<PackageIdentity> packages)
+        {
+            var packageManager = CreatePackageManager(modeContext, executionContext);
+
+            var project = modeContext.SolutionManager.GetProject(executionContext.ProjectSafeName);
+
+            var projectManager = packageManager.GetProjectManager(project);
+
+            bool ignoreDependencies = executionContext.DependencyBehavior == DependencyBehavior.Ignore;
+
+            foreach (var package in packages)
+            {
+                bool allowPrerelease = executionContext.AllowPrerelease || (package.Version != null && package.Version.IsPrerelease);
+
+                packageManager.UninstallPackage(projectManager, package.Id, GetVersion(package.Version), executionContext.Force, executionContext.RemoveDependencies, executionContext.Logger);
+            }
+        }
+
         /// <summary>
         /// Install packages
         /// </summary>
-        public static void ExecuteNuGetProjectAction(LegacyModeContext modeContext, LegacyExecuteContext executionContext, IEnumerable<PackageIdentity> packages)
+        public static void ExecuteUpdate(LegacyModeContext modeContext, LegacyExecuteContext executionContext, IEnumerable<PackageIdentity> packages)
         {
-            var project = modeContext.SolutionManager.GetProject(executionContext.ProjectSafeName);
+            
+        }
 
+        public static NuGet.VisualStudio.IVsPackageManager CreatePackageManager(LegacyModeContext modeContext, LegacyExecuteContext executionContext)
+        {
             var primary = new AggregateRepository(modeContext.RepositoryFactory, executionContext.PrimarySources, false);
             var secondary = new AggregateRepository(modeContext.RepositoryFactory, executionContext.SecondarySources, true);
 
@@ -99,16 +138,7 @@ namespace NuGet.PackageManagement.Interop.V2
 
             packageManager.Logger = executionContext.Logger;
 
-            var projectManager = packageManager.GetProjectManager(project);
-
-            bool ignoreDependencies = executionContext.DependencyBehavior == DependencyBehavior.Ignore;
-
-            foreach (var package in packages)
-            {
-                bool allowPrerelease = executionContext.AllowPrerelease || (package.Version != null && package.Version.IsPrerelease);
-
-                packageManager.InstallPackage(projectManager, package.Id, GetVersion(package.Version), ignoreDependencies, allowPrerelease, executionContext.Logger);
-            }
+            return packageManager;
         }
     }
 }
