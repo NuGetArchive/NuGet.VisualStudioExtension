@@ -1,4 +1,7 @@
-﻿using NuGet.Resolver;
+﻿extern alias Legacy;
+using Legacy.NuGet;
+
+using NuGet.Resolver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,13 +27,18 @@ namespace NuGet.PackageManagement.Interop.V2
 
         public bool AllowPrerelease { get; set; }
 
-        public IEnumerable<string> Sources { get; set; }
+        public IEnumerable<string> PrimarySources { get; set; }
 
-        public string ProjectCustomName { get; set; }
+        public IEnumerable<string> SecondarySources { get; set; }
+
+        public string ProjectSafeName { get; set; }
+
+
+        public ILogger Logger { get; set; }
 
         public LegacyExecuteContext()
         {
-
+            Logger = NullLogger.Instance;
         }
     }
 }

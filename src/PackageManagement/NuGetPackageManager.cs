@@ -1,6 +1,7 @@
 ﻿using NuGet.Configuration;
 using NuGet.Frameworks;
 using NuGet.PackageManagement.Interop.V2;
+using NuGet.PackageManagement.InteropV2;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.ProjectManagement;
@@ -1029,11 +1030,22 @@ namespace NuGet.PackageManagement
                     LegacyExecuteContext executeContext = new LegacyExecuteContext();
                     executeContext.AllowFallbackRepositories = true;
 
+                    var allSources = SourceRepositoryProvider.GetRepositories().Where(e => e.PackageSource.IsEnabled);
+
+                    executeContext.ProjectSafeName = SolutionManager.GetNuGetProjectSafeName(nuGetProject);
+
+                    executeContext.Logger = new LegacyLogger(nuGetProjectContext);
+
                     foreach (var action in nuGetProjectActions)
                     {
-                        var source = new string[] { action.SourceRepository.PackageSource.Source };
+                        executeContext.PrimarySources = new string[] { action.SourceRepository.PackageSource.Source };
 
-                        CompatUtility.ExecuteNuGetProjectAction(_legacyContext, executeContext, action.PackageIdentity, source);
+                        // get all enabled sources that aren't the primary
+                        executeContext.SecondarySources = allSources.Where(e =>
+                            !StringComparer.OrdinalIgnoreCase.Equals(action.SourceRepository.PackageSource.Source, e.PackageSource.Source))
+                            .Select(e => e.PackageSource.Source);
+
+                        CompatUtility.ExecuteNuGetProjectAction(_legacyContext, executeContext, new PackageIdentity[] { action.PackageIdentity });
                     }
                 }
                 else

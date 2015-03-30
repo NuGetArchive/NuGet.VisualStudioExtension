@@ -77,11 +77,19 @@ namespace NuGet.PackageManagement.Interop.V2
             return DependencyVersion.Lowest;
         }
 
-        public static void ExecuteNuGetProjectAction(LegacyModeContext modeContext, LegacyExecuteContext executionContext, PackageIdentity package, IEnumerable<string> sources)
+        /// <summary>
+        /// Install packages
+        /// </summary>
+        public static void ExecuteNuGetProjectAction(LegacyModeContext modeContext, LegacyExecuteContext executionContext, IEnumerable<PackageIdentity> packages)
         {
-            var repo = CreateAggregateRepositoryFromSources(modeContext, sources);
+            var project = modeContext.SolutionManager.GetProject(executionContext.ProjectSafeName);
 
-            var packageManager = modeContext.PackageManagerFactory.CreatePackageManager(repo, executionContext.AllowFallbackRepositories);
+            var primary = new AggregateRepository(modeContext.RepositoryFactory, executionContext.PrimarySources, false);
+            var secondary = new AggregateRepository(modeContext.RepositoryFactory, executionContext.SecondarySources, true);
+
+            var combined = new PriorityPackageRepository(primary, secondary);
+
+            var packageManager = modeContext.PackageManagerFactory.CreatePackageManager(combined, executionContext.AllowFallbackRepositories);
 
             packageManager.WhatIf = executionContext.WhatIf;
 
@@ -89,11 +97,18 @@ namespace NuGet.PackageManagement.Interop.V2
 
             packageManager.BindingRedirectEnabled = !executionContext.SkipBindingRedirects;
 
+            packageManager.Logger = executionContext.Logger;
+
+            var projectManager = packageManager.GetProjectManager(project);
+
             bool ignoreDependencies = executionContext.DependencyBehavior == DependencyBehavior.Ignore;
 
-            bool allowPrerelease = executionContext.AllowPrerelease || (package.Version != null && package.Version.IsPrerelease);
+            foreach (var package in packages)
+            {
+                bool allowPrerelease = executionContext.AllowPrerelease || (package.Version != null && package.Version.IsPrerelease);
 
-            packageManager.InstallPackage(package.Id, GetVersion(package.Version), ignoreDependencies, allowPrerelease);
+                packageManager.InstallPackage(projectManager, package.Id, GetVersion(package.Version), ignoreDependencies, allowPrerelease, executionContext.Logger);
+            }
         }
     }
 }
