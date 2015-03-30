@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NuGet.Protocol.Core.Types;
+using NuGet.PackageManagement.Interop.V2;
 
 namespace NuGet.PackageManagement
 {
@@ -19,11 +20,16 @@ namespace NuGet.PackageManagement
         protected static readonly string NuGetTargetsFile = Path.Combine(NuGetSolutionSettingsFolder, "NuGet.targets");
         protected const string NuGetBuildPackageName = "NuGet.Build";
         protected const string NuGetCommandLinePackageName = "NuGet.CommandLine";
+        private readonly ILegacyModeContextProvider _legacyProvider;
 
         protected ISourceRepositoryProvider SourceRepositoryProvider { get; set; }
         protected ISolutionManager SolutionManager { get; set; }
         protected ISettings Settings { get; set; }
-        public PackageRestoreManager(ISourceRepositoryProvider sourceRepositoryProvider, ISettings settings, ISolutionManager solutionManager)
+
+        public PackageRestoreManager(ISourceRepositoryProvider sourceRepositoryProvider,
+            ISettings settings,
+            ISolutionManager solutionManager,
+            ILegacyModeContextProvider legacyProvider)
         {
             if(sourceRepositoryProvider == null)
             {
@@ -39,6 +45,8 @@ namespace NuGet.PackageManagement
             {
                 throw new ArgumentNullException("solutionManager");
             }
+
+            _legacyProvider = legacyProvider;
 
             SourceRepositoryProvider = sourceRepositoryProvider;
             Settings = settings;
@@ -134,7 +142,7 @@ namespace NuGet.PackageManagement
 
         public IEnumerable<PackageReference> GetMissingPackages(IEnumerable<PackageReference> packageReferences)
         {
-            var nuGetPackageManager = new NuGetPackageManager(SourceRepositoryProvider, Settings, SolutionManager);
+            var nuGetPackageManager = new NuGetPackageManager(SourceRepositoryProvider, Settings, SolutionManager, _legacyProvider.GetContext());
             return GetMissingPackages(nuGetPackageManager, packageReferences);
         }
 
@@ -201,7 +209,7 @@ namespace NuGet.PackageManagement
                 throw new ArgumentNullException("packageReferences");
             }
 
-            var nuGetPackageManager = new NuGetPackageManager(SourceRepositoryProvider, Settings, SolutionManager);
+            var nuGetPackageManager = new NuGetPackageManager(SourceRepositoryProvider, Settings, SolutionManager, _legacyProvider.GetContext());
             return await RestoreMissingPackages(nuGetPackageManager, packageReferences,
                 SolutionManager.NuGetProjectContext ?? new EmptyNuGetProjectContext(), token, PackageRestoredEvent);
         }

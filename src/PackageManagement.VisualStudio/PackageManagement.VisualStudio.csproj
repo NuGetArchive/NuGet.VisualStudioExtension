@@ -276,6 +276,10 @@
       <Name>Core</Name>
       <Aliases>Legacy</Aliases>
     </ProjectReference>
+    <ProjectReference Include="..\PackageManagement.Interop.V2\PackageManagement.Interop.V2.csproj">
+      <Project>{ee5681b2-9017-4467-b530-8bac1814a575}</Project>
+      <Name>PackageManagement.Interop.V2</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PackageManagement.UI\PackageManagement.UI.csproj">
       <Project>{538adefd-2170-40a9-a2c5-ec8369cfe490}</Project>
       <Name>PackageManagement.UI</Name>

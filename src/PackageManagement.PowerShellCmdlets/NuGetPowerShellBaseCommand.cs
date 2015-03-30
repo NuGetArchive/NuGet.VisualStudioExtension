@@ -59,7 +59,9 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         {
             get
             {
-                return new NuGetPackageManager(_resourceRepositoryProvider, _settings, _solutionManager);
+                var legacyContext = _packageManagementContext.LegacyModeContextProvider.GetContext();
+
+                return new NuGetPackageManager(_resourceRepositoryProvider, _settings, _solutionManager, legacyContext);
             }
         }
 

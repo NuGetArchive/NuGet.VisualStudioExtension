@@ -33,6 +33,7 @@ namespace NuGetConsole.Host.PowerShell.Implementation
         private readonly ISettings _settings;
         private readonly ISourceControlManagerProvider _sourceControlManagerProvider;
         private readonly ICommonOperations _commonOperations;
+        private readonly LegacyModeContext _legacyContext;
         private const string ActivePackageSourceKey = "activePackageSource";
         private const string PackageSourceKey = "packageSources";
         private const string SyncModeKey = "IsSyncMode";
@@ -65,7 +66,10 @@ namespace NuGetConsole.Host.PowerShell.Implementation
             _settings = ServiceLocator.GetInstance<ISettings>();
             _dte = ServiceLocator.GetInstance<DTE>();
             _sourceControlManagerProvider = ServiceLocator.GetInstanceSafe<ISourceControlManagerProvider>();
+
             var legacyProvider = ServiceLocator.GetInstanceSafe<ILegacyModeContextProvider>();
+            _legacyContext = legacyProvider.GetContext();
+
             _commonOperations = ServiceLocator.GetInstanceSafe<ICommonOperations>();
             _packageManagementContext = new PackageManagementContext(_sourceRepositoryProvider, _solutionManager,
                 _settings, _sourceControlManagerProvider, _commonOperations, legacyProvider);
@@ -316,7 +320,7 @@ namespace NuGetConsole.Host.PowerShell.Implementation
                     // invoke init.ps1 files in the order of package dependency.
                     // if A -> B, we invoke B's init.ps1 before A's.
                     IEnumerable<NuGetProject> projects = _solutionManager.GetNuGetProjects();
-                    NuGetPackageManager packageManager = new NuGetPackageManager(_sourceRepositoryProvider, _settings, _solutionManager);
+                    NuGetPackageManager packageManager = new NuGetPackageManager(_sourceRepositoryProvider, _settings, _solutionManager, _legacyContext);
                     List<PackageIdentity> sortedPackages = new List<PackageIdentity>();
                     foreach (NuGetProject project in projects)
                     {

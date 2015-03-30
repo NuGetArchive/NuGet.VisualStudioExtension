@@ -123,12 +123,21 @@ namespace NuGet.PackageManagement.Interop.V2
 
         public static NuGet.VisualStudio.IVsPackageManager CreatePackageManager(LegacyModeContext modeContext, LegacyExecuteContext executionContext)
         {
-            var primary = new AggregateRepository(modeContext.RepositoryFactory, executionContext.PrimarySources, false);
-            var secondary = new AggregateRepository(modeContext.RepositoryFactory, executionContext.SecondarySources, true);
+            NuGet.VisualStudio.IVsPackageManager packageManager = null;
 
-            var combined = new PriorityPackageRepository(primary, secondary);
+            if (executionContext.PrimarySources == null || !executionContext.PrimarySources.Any())
+            {
+                packageManager = modeContext.PackageManagerFactory.CreatePackageManager();
+            }
+            else
+            {
+                var primary = new AggregateRepository(modeContext.RepositoryFactory, executionContext.PrimarySources, false);
+                var secondary = new AggregateRepository(modeContext.RepositoryFactory, executionContext.SecondarySources, true);
 
-            var packageManager = modeContext.PackageManagerFactory.CreatePackageManager(combined, executionContext.AllowFallbackRepositories);
+                var combined = new PriorityPackageRepository(primary, secondary);
+
+                packageManager = modeContext.PackageManagerFactory.CreatePackageManager(combined, executionContext.AllowFallbackRepositories);
+            }
 
             packageManager.WhatIf = executionContext.WhatIf;
 

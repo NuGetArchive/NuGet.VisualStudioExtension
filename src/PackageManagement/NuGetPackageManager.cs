@@ -54,11 +54,11 @@ namespace NuGet.PackageManagement
         /// <summary>
         /// To construct a NuGetPackageManager with a mandatory SolutionManager lke VS
         /// </summary>
-        public NuGetPackageManager(ISourceRepositoryProvider sourceRepositoryProvider, ISettings settings, ISolutionManager solutionManager/*, IPackageResolver packageResolver */)
-            : this(sourceRepositoryProvider, settings, solutionManager, null)
-        {
+        //public NuGetPackageManager(ISourceRepositoryProvider sourceRepositoryProvider, ISettings settings, ISolutionManager solutionManager/*, IPackageResolver packageResolver */)
+        //    : this(sourceRepositoryProvider, settings, solutionManager, null)
+        //{
 
-        }
+        //}
 
         /// <summary>
         /// To construct a NuGetPackageManager with a mandatory SolutionManager lke VS
@@ -1032,7 +1032,6 @@ namespace NuGet.PackageManagement
             {
                 if (UseLegacyMode(nuGetProject))
                 {
-                    // TODO: implement this fully
                     LegacyExecuteContext executeContext = new LegacyExecuteContext();
                     executeContext.AllowFallbackRepositories = true;
 
@@ -1044,8 +1043,6 @@ namespace NuGet.PackageManagement
 
                     foreach (var action in nuGetProjectActions)
                     {
-                        executeContext.PrimarySources = new string[] { action.SourceRepository.PackageSource.Source };
-
                         // get all enabled sources that aren't the primary
                         executeContext.SecondarySources = allSources.Where(e =>
                             !StringComparer.OrdinalIgnoreCase.Equals(action.SourceRepository.PackageSource.Source, e.PackageSource.Source))
@@ -1053,6 +1050,8 @@ namespace NuGet.PackageManagement
 
                         if (action.NuGetProjectActionType == NuGetProjectActionType.Install)
                         {
+                            executeContext.PrimarySources = new string[] { action.SourceRepository.PackageSource.Source };
+
                             CompatUtility.ExecuteInstall(_legacyContext, executeContext, new PackageIdentity[] { action.PackageIdentity });
                         }
                         else if (action.NuGetProjectActionType == NuGetProjectActionType.Uninstall)

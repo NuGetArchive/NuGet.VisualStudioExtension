@@ -3,6 +3,7 @@ using System.ComponentModel.Composition;
 using System.Threading;
 using NuGet.Configuration;
 using NuGet.Protocol.Core.Types;
+using NuGet.PackageManagement.Interop.V2;
 
 namespace NuGet.PackageManagement.VisualStudio
 {
@@ -13,12 +14,16 @@ namespace NuGet.PackageManagement.VisualStudio
             : this(
                 ServiceLocator.GetInstance<ISourceRepositoryProvider>(),
                 ServiceLocator.GetInstance<ISettings>(),
-                ServiceLocator.GetInstance<ISolutionManager>())
+                ServiceLocator.GetInstance<ISolutionManager>(),
+                ServiceLocator.GetInstance<ILegacyModeContextProvider>())
         {
         }
 
-        public VSPackageRestoreManager(ISourceRepositoryProvider sourceRepositoryProvider, ISettings settings, ISolutionManager solutionManager)
-            : base(sourceRepositoryProvider, settings, solutionManager)
+        public VSPackageRestoreManager(ISourceRepositoryProvider sourceRepositoryProvider, 
+            ISettings settings, 
+            ISolutionManager solutionManager,
+            ILegacyModeContextProvider legacyProvider)
+            : base(sourceRepositoryProvider, settings, solutionManager, legacyProvider)
         {
             SolutionManager = solutionManager;
             SolutionManager.NuGetProjectAdded += OnNuGetProjectAdded;

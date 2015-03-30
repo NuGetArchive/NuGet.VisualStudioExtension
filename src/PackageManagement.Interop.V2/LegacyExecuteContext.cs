@@ -41,7 +41,9 @@ namespace NuGet.PackageManagement.Interop.V2
 
         public LegacyExecuteContext()
         {
+            // Defaults
             Logger = NullLogger.Instance;
+            DependencyBehavior = DependencyBehavior.Lowest;
         }
     }
 }
