@@ -1,14 +1,14 @@
-﻿using NuGet.Packaging;
-using NuGet.PackagingCore;
-using NuGet.ProjectManagement;
-using NuGet.Resolver;
-using NuGet.Versioning;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
+using NuGet.Packaging;
+using NuGet.Packaging.Core;
+using NuGet.ProjectManagement;
+using NuGet.Resolver;
+using NuGet.Versioning;
 
 namespace NuGet.PackageManagement.PowerShellCmdlets
 {
@@ -80,8 +80,8 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
         protected override void Preprocess()
         {
-            ParseUserInputForVersion();
             base.Preprocess();
+            ParseUserInputForVersion();
             if (!_projectSpecified)
             {
                 Projects = VsSolutionManager.GetNuGetProjects().ToList();
@@ -94,7 +94,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
         protected override void ProcessRecordCore()
         {
-            base.ProcessRecordCore();
+            Preprocess();
 
             SubscribeToProgressEvents();
             PerformPackageUpdatesOrReinstalls();
@@ -117,7 +117,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             {
                 Task.Run(() => UpdateOrReinstallSinglePackage());
             }
-            WaitAndLogFromMessageQueue();
+            WaitAndLogPackageActions();
         }
 
         /// <summary>
@@ -139,7 +139,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             }
             finally
             {
-                completeEvent.Set();
+                blockingCollection.Add(new ExecutionCompleteMessage());
             }
         }
 
@@ -162,7 +162,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             }
             finally
             {
-                completeEvent.Set();
+                blockingCollection.Add(new ExecutionCompleteMessage());
             }
         }
 
@@ -225,7 +225,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             }
             else
             {
-                Log(MessageLevel.Info, Resources.Cmdlet_NoPackageUpdates);
+                Log(MessageLevel.Info, string.Format(Resources.Cmdlet_NoPackageUpdates, project.GetMetadata<string>(NuGetProjectMetadataKeys.Name)));
             }
         }
 
@@ -258,7 +258,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                     }
                     else
                     {
-                        Log(MessageLevel.Info, Resources.Cmdlet_NoPackageUpdates);
+                        Log(MessageLevel.Info, string.Format(Resources.Cmdlet_NoPackageUpdates, project.GetMetadata<string>(NuGetProjectMetadataKeys.Name)));
                     }
                 }
                 else
@@ -280,7 +280,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                         }
                         else
                         {
-                            Log(MessageLevel.Info, Resources.Cmdlet_NoPackageUpdates);
+                            Log(MessageLevel.Info, string.Format(Resources.Cmdlet_NoPackageUpdates, project.GetMetadata<string>(NuGetProjectMetadataKeys.Name)));
                         }
                     }
                 }
@@ -343,6 +343,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                     }
                 }
             }
+            _allowPrerelease = IncludePrerelease.IsPresent || _versionSpecifiedPrerelease;
         }
 
         /// <summary>
@@ -352,7 +353,6 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         {
             get
             {
-                _allowPrerelease = IncludePrerelease.IsPresent || _versionSpecifiedPrerelease;
                 _context = new ResolutionContext(GetDependencyBehavior(), _allowPrerelease, false);
                 return _context;
             }

@@ -1,6 +1,5 @@
 ﻿extern alias Legacy;
 using EnvDTE;
-using NuGet.Client;
 using NuGet.Configuration;
 using NuGet.PackageManagement;
 using NuGet.Versioning;
@@ -11,7 +10,12 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using NuGet.Protocol.Core.Types;
 using LegacyNuGet = Legacy.NuGet;
+using NuGet.ProjectManagement;
+using NuGet.Packaging;
+using System.Diagnostics;
+using NuGet.PackageManagement.VisualStudio;
 
 namespace NuGet.VisualStudio
 {
@@ -34,22 +38,56 @@ namespace NuGet.VisualStudio
 
         public IEnumerable<IVsPackageMetadata> GetInstalledPackages()
         {
-            InitializePackageManagerAndPackageFolderPath();
+            List<IVsPackageMetadata> packages = new List<IVsPackageMetadata>();
 
-            foreach (var project in _solutionManager.GetNuGetProjects())
+            // Debug.Assert(_solutionManager.SolutionDirectory != null, "SolutionDir is null");
+
+            // Calls may occur in the template wizard before the solution is actually created, in that case return no projects
+            if (_solutionManager != null && !String.IsNullOrEmpty(_solutionManager.SolutionDirectory))
             {
-                var task = System.Threading.Tasks.Task.Run(async () => await project.GetInstalledPackagesAsync(CancellationToken.None));
-                task.Wait();
+                InitializePackageManagerAndPackageFolderPath();
 
-                foreach (var package in task.Result)
+                foreach (var project in _solutionManager.GetNuGetProjects())
                 {
-                    // Get the install path for package
-                    string installPath = Path.Combine(_packageFolderPath, package.PackageIdentity.ToString());
-                    yield return new VsPackageMetadata(package.PackageIdentity, installPath);
+                    var task = System.Threading.Tasks.Task.Run(async () => await project.GetInstalledPackagesAsync(CancellationToken.None));
+                    task.Wait();
+
+                    foreach (var package in task.Result)
+                    {
+                        // find packages using the solution level packages folder
+                        string installPath = _packageManager.PackagesFolderNuGetProject.GetInstalledPath(package.PackageIdentity);
+
+                        var metadata = new VsPackageMetadata(package.PackageIdentity, installPath);
+                        packages.Add(metadata);
+                    }
                 }
             }
 
-            yield break;
+            return packages;
+        }
+
+        private IEnumerable<PackageReference> GetInstalledPackageReferences(Project project)
+        {
+            if (project == null)
+            {
+                throw new ArgumentNullException("project");
+            }
+
+            List<PackageReference> packages = new List<PackageReference>();
+
+            if (_solutionManager != null && !String.IsNullOrEmpty(_solutionManager.SolutionDirectory))
+            {
+                InitializePackageManagerAndPackageFolderPath();
+
+                var nuGetProject = PackageManagementHelpers.GetProject(_solutionManager, project, new VSAPIProjectContext());
+                var task = System.Threading.Tasks.Task.Run(async () => await nuGetProject.GetInstalledPackagesAsync(CancellationToken.None));
+                task.Wait();
+
+                packages.AddRange(task.Result);
+                                
+            }
+
+            return packages;
         }
 
         public IEnumerable<IVsPackageMetadata> GetInstalledPackages(Project project)
@@ -59,24 +97,36 @@ namespace NuGet.VisualStudio
                 throw new ArgumentNullException("project");
             }
 
-            InitializePackageManagerAndPackageFolderPath();
+            List<IVsPackageMetadata> packages = new List<IVsPackageMetadata>();
 
-            foreach (var curProject in _solutionManager.GetNuGetProjects())
+            // Debug.Assert(_solutionManager.SolutionDirectory != null, "SolutionDir is null");
+
+            if (_solutionManager != null && !String.IsNullOrEmpty(_solutionManager.SolutionDirectory))
             {
-                if (StringComparer.Ordinal.Equals(_solutionManager.GetNuGetProjectSafeName(curProject), project.UniqueName))
+                InitializePackageManagerAndPackageFolderPath();
+
+                var nuGetProject = PackageManagementHelpers.GetProject(_solutionManager, project, new VSAPIProjectContext());
+                var task = System.Threading.Tasks.Task.Run(async () => await nuGetProject.GetInstalledPackagesAsync(CancellationToken.None));
+                task.Wait();
+
+                foreach (var package in task.Result)
                 {
-                    var task = System.Threading.Tasks.Task.Run(async () => await curProject.GetInstalledPackagesAsync(CancellationToken.None));
-                    task.Wait();
-                    foreach (var package in task.Result)
+                    // Get the install path for package
+                    string installPath = _packageManager.PackagesFolderNuGetProject.GetInstalledPath(package.PackageIdentity);
+
+                    if (!String.IsNullOrEmpty(installPath))
                     {
-                        // Get the install path for package
-                        string installPath = Path.Combine(_packageFolderPath, package.PackageIdentity.ToString());
-                        yield return new VsPackageMetadata(package.PackageIdentity, installPath);
+                        // normalize the path and take the dir if the nupkg path was given
+                        var dir = new DirectoryInfo(installPath);
+                        installPath = dir.FullName;
                     }
+
+                    var metadata = new VsPackageMetadata(package.PackageIdentity, installPath);
+                    packages.Add(metadata);
                 }
             }
 
-            yield break;
+            return packages;
         }
 
         private void InitializePackageManagerAndPackageFolderPath()
@@ -121,7 +171,7 @@ namespace NuGet.VisualStudio
                 throw new ArgumentException(CommonResources.Argument_Cannot_Be_Null_Or_Empty, "packageId");
             }
 
-            var packages = GetInstalledPackages(project).Where(p => StringComparer.OrdinalIgnoreCase.Equals(p.Id, packageId));
+            var packages = GetInstalledPackageReferences(project).Where(p => StringComparer.OrdinalIgnoreCase.Equals(p.PackageIdentity.Id, packageId));
 
             if (version != null)
             {
@@ -131,7 +181,7 @@ namespace NuGet.VisualStudio
                     throw new ArgumentException(VsResources.InvalidSemanticVersionString, "version");
                 }
 
-                packages = packages.Where(p => VersionComparer.VersionRelease.Equals(NuGetVersion.Parse(p.VersionString), semVer));
+                packages = packages.Where(p => VersionComparer.VersionRelease.Equals(p.PackageIdentity.Version, semVer));
             }
 
             return packages.Any();

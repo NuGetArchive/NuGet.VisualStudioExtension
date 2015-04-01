@@ -1,28 +1,23 @@
 ﻿extern alias Legacy;
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
-using EnvDTE;
-using Microsoft.VisualStudio.Shell;
-using NuGet.VisualStudio.Resources;
-
-
-using LegacyNuGet = Legacy.NuGet;
-using NuGet.PackageManagement.VisualStudio;
-using NuGet.PackageManagement;
-using NuGet.Configuration;
-using NuGet.PackagingCore;
-using NuGet.Client;
 using System.Threading;
-using NuGet.ProjectManagement;
-using NuGet.Packaging;
+using EnvDTE;
+using NuGet.Configuration;
 using NuGet.Frameworks;
+using NuGet.PackageManagement;
+using NuGet.PackageManagement.VisualStudio;
+using NuGet.Packaging;
+using NuGet.Packaging.Core;
+using NuGet.ProjectManagement;
+using NuGet.Protocol.Core.Types;
+using NuGet.VisualStudio.Resources;
+using LegacyNuGet = Legacy.NuGet;
 
 namespace NuGet.VisualStudio
 {
@@ -146,7 +141,6 @@ namespace NuGet.VisualStudio
             IVsPackageInstaller packageInstaller,
             Project project,
             PreinstalledPackageConfiguration configuration,
-            Lazy<IRepositorySettings> repositorySettings,
             Action<string> warningHandler,
             Action<string> errorHandler)
         {
@@ -188,13 +182,32 @@ namespace NuGet.VisualStudio
                         List<PackageIdentity> toInstall = new List<PackageIdentity>();
                         toInstall.Add(new PackageIdentity(package.Id, package.Version));
 
+                        // Skip assembly references and disable binding redirections should be done together
+                        bool disableBindingRedirects = package.SkipAssemblyReferences;
+
+                        VSAPIProjectContext projectContext = new VSAPIProjectContext(package.SkipAssemblyReferences, disableBindingRedirects);
+
+                        // Old templates have hardcoded non-normalized paths
+                        projectContext.PackageExtractionContext.UseLegacyPackageInstallPath = true;
+
                         // This runs from the UI thread
-                        var task = System.Threading.Tasks.Task.Run(async () => await _installer.InstallInternal(project, toInstall, repos, package.SkipAssemblyReferences, package.IgnoreDependencies, CancellationToken.None));
-                        task.Wait();
+                        PackageManagementHelpers.RunSync(async () => await _installer.InstallInternal(project, toInstall, repos, projectContext, package.IgnoreDependencies, CancellationToken.None));
                     }
                     catch (InvalidOperationException exception)
                     {
                         failedPackageErrors.Add(package.Id + "." + package.Version + " : " + exception.Message);
+                    }
+                    catch (AggregateException aggregateEx)
+                    {
+                        var ex = aggregateEx.Flatten().InnerExceptions.FirstOrDefault();
+                        if (ex is InvalidOperationException)
+                        {
+                            failedPackageErrors.Add(package.Id + "." + package.Version + " : " + ex.Message);
+                        }
+                        else
+                        {
+                            throw;
+                        }
                     }
                 }
             }
@@ -213,12 +226,10 @@ namespace NuGet.VisualStudio
             // RepositorySettings = null in unit tests
             if (EnvDTEProjectUtility.IsWebSite(project))
             {
-                // TODO: respect SkipAssemblyReferences and add them here
-
-                // CreateRefreshFilesInBin(
-                //    project,
-                //    repositoryPath,
-                //    configuration.Packages.Where(p => p.SkipAssemblyReferences));
+                CreateRefreshFilesInBin(
+                   project,
+                   repositoryPath,
+                   configuration.Packages.Where(p => p.SkipAssemblyReferences));
 
                 CopyNativeBinariesToBin(project, repositoryPath, configuration.Packages);
             }
@@ -262,6 +273,10 @@ namespace NuGet.VisualStudio
                 return;
             }
 
+            VSAPIProjectContext context = new VSAPIProjectContext();
+            WebSiteProjectSystem projectSystem = new WebSiteProjectSystem(project, context);
+
+            var root = EnvDTEProjectUtility.GetFullPath(project);
 
             foreach (var packageName in packageNames)
             {
@@ -272,9 +287,6 @@ namespace NuGet.VisualStudio
                 PackageFolderReader reader = new PackageFolderReader(packageFolder);
 
                 var frameworkGroups = reader.GetReferenceItems();
-
-                VSAPIProjectContext context = new VSAPIProjectContext();
-                WebSiteProjectSystem projectSystem = new WebSiteProjectSystem(project, context);
 
                 var groups = reader.GetReferenceItems();
 
@@ -288,13 +300,11 @@ namespace NuGet.VisualStudio
 
                     foreach (string refItem in refGroup.Items)
                     {
-                        string sourcePath = Path.Combine(packageFolder.FullName, refItem);
-
-                        // TODO: change this back to adding refresh files in bulk
-                        projectSystem.AddReference(sourcePath);
+                        string sourcePath = Path.Combine(packageFolder.FullName, refItem.Replace('/', Path.DirectorySeparatorChar));
 
                         // create one refresh file for each assembly reference, as per required by Website projects
                         // projectSystem.CreateRefreshFile(assemblyPath);
+                        RefreshFileUtility.CreateRefreshFile(projectSystem, sourcePath, context);
                     }
                 }
             }
@@ -315,7 +325,7 @@ namespace NuGet.VisualStudio
             {
                 string packagePath = String.Format(CultureInfo.InvariantCulture, "{0}.{1}", packageInfo.Id, packageInfo.Version);
 
-                CopyNativeBinaries(projectSystem, repositoryPath, 
+                CopyNativeBinaries(projectSystem, repositoryPath,
                     Path.Combine(repositoryPath, packagePath));
             }
         }

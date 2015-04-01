@@ -1,4 +1,4 @@
-﻿using NuGet.PackageManagement;
+﻿using NuGet.ProjectManagement;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 
@@ -16,9 +16,9 @@ namespace NuGet.VisualStudio
 
         public event VsPackageEventHandler PackageUninstalled;
 
-        public event VsPackageEventHandler PackageReferenceAdded = delegate { };
+        public event VsPackageEventHandler PackageReferenceAdded;
 
-        public event VsPackageEventHandler PackageReferenceRemoved = delegate { };
+        public event VsPackageEventHandler PackageReferenceRemoved;
 
         private readonly PackageEvents _eventSource;
 
@@ -34,6 +34,8 @@ namespace NuGet.VisualStudio
             _eventSource.PackageUninstalled += Source_PackageUninstalled;
             _eventSource.PackageUninstalling += Source_PackageUninstalling;
         }
+
+        // TODO: If the extra metadata fields are needed use: PackageManagementHelpers.CreateMetadata()
 
         private void Source_PackageUninstalling(object sender, PackageEventArgs e)
         {
@@ -99,12 +101,18 @@ namespace NuGet.VisualStudio
 
         internal void NotifyReferenceAdded(PackageOperationEventArgs e)
         {
-            PackageReferenceAdded(new VsPackageMetadata(e.Package, e.InstallPath));
+            if (PackageReferenceAdded != null)
+            {
+                PackageReferenceAdded(new VsPackageMetadata(e.Package, e.InstallPath));
+            }
         }
 
         internal void NotifyReferenceRemoved(PackageOperationEventArgs e)
         {
-            PackageReferenceRemoved(new VsPackageMetadata(e.Package, e.InstallPath));
+            if (PackageReferenceRemoved != null)
+            {
+                PackageReferenceRemoved(new VsPackageMetadata(e.Package, e.InstallPath));
+            }
         }
     }
 }

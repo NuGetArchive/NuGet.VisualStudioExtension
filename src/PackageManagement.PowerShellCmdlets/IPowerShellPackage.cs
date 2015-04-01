@@ -1,7 +1,7 @@
 ﻿extern alias Legacy;
-using LegacyNuGet = Legacy.NuGet;
 using NuGet.Versioning;
 using System.Collections.Generic;
+using LegacyNuGet = Legacy.NuGet;
 
 namespace NuGet.PackageManagement.PowerShellCmdlets
 {
@@ -19,7 +19,8 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
         /// <summary>
         /// Semantic Version of the package
+        /// Do not remove this property, it is needed for PS1 script backward-compatbility. 
         /// </summary>
-        Legacy.NuGet.SemanticVersion Version { get; set; }
+        LegacyNuGet.SemanticVersion Version { get; set; }
     }
 }

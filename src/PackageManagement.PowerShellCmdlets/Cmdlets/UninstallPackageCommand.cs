@@ -40,6 +40,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         protected override void Preprocess()
         {
             base.Preprocess();
+            CheckForSolutionOpen();
             UpdateActiveSourceRepository();
             GetNuGetProject(ProjectName);
         }
@@ -48,11 +49,9 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         {
             Preprocess();
 
-            CheckForSolutionOpen();
-
             SubscribeToProgressEvents();
             Task.Run(() => UnInstallPackage());
-            WaitAndLogFromMessageQueue();
+            WaitAndLogPackageActions();
             UnsubscribeFromProgressEvents();
         }
 
@@ -71,7 +70,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             }
             finally
             {
-                completeEvent.Set();
+                blockingCollection.Add(new ExecutionCompleteMessage());
             }
         }
 

@@ -45,8 +45,7 @@ namespace NuGet.PackageManagement.VisualStudio
             else
             {
                 AddImportStatementForVS2013(location, relativeTargetPath);
-            }
-            
+            }      
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -58,7 +57,7 @@ namespace NuGet.PackageManagement.VisualStudio
                 buildProject => MicrosoftBuildEvaluationProjectUtility.AddImportStatement(buildProject, relativeTargetPath, location));
 
             // notify the project system of the change
-            UpdateImportStamp(EnvDTEProject);
+            UpdateImportStamp(EnvDTEProject, true);
         }
 
         public override void RemoveImport(string targetPath)
@@ -92,7 +91,7 @@ namespace NuGet.PackageManagement.VisualStudio
                 buildProject => MicrosoftBuildEvaluationProjectUtility.RemoveImportStatement(buildProject, relativeTargetPath));
 
             // notify the project system of the change
-            UpdateImportStamp(EnvDTEProject);
+            UpdateImportStamp(EnvDTEProject, true);
         }
     }
 }

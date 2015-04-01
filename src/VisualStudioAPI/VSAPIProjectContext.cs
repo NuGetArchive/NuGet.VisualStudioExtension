@@ -2,18 +2,35 @@
 using NuGet.ProjectManagement;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace NuGet.VisualStudio
 {
-    internal sealed class VSAPIProjectContext : INuGetProjectContext
+    internal sealed class VSAPIProjectContext : IMSBuildNuGetProjectContext
     {
+        private bool _skipAssemblyReferences;
+        private bool _bindingRedirectsDisabled;
         private readonly ISourceControlManagerProvider _sourceControlManagerProvider;
+
         public VSAPIProjectContext()
+            : this(false, false, true)
         {
+
+        }
+
+        public VSAPIProjectContext(bool skipAssemblyReferences, bool bindingRedirectsDisabled, bool useLegacyInstallPaths=true)
+        {
+            PackageExtractionContext = new Packaging.PackageExtractionContext();
+
+            // many templates depend on legacy paths, for the VS API and template wizard we unfortunately need to keep them
+            PackageExtractionContext.UseLegacyPackageInstallPath = useLegacyInstallPaths;
+
             _sourceControlManagerProvider = ServiceLocator.GetInstanceSafe<ISourceControlManagerProvider>();
+            _skipAssemblyReferences = skipAssemblyReferences;
+            _bindingRedirectsDisabled = bindingRedirectsDisabled;
         }
 
         public void Log(MessageLevel level, string message, params object[] args)
@@ -28,11 +45,7 @@ namespace NuGet.VisualStudio
         }
 
 
-        public Packaging.PackageExtractionContext PackageExtractionContext
-        {
-            get;
-            set;
-        }
+        public Packaging.PackageExtractionContext PackageExtractionContext { get; set; }
 
 
         public ISourceControlManagerProvider SourceControlManagerProvider
@@ -43,6 +56,28 @@ namespace NuGet.VisualStudio
         public ExecutionContext ExecutionContext
         {
             get { return null; }
+        }
+
+        public bool SkipAssemblyReferences
+        {
+            get
+            {
+                return _skipAssemblyReferences;
+            }
+        }
+
+        public bool BindingRedirectsDisabled
+        {
+            get
+            {
+                return _bindingRedirectsDisabled;
+            }
+        }
+
+        public void ReportError(string message)
+        {
+            // no-op
+            Debug.Fail(message);
         }
     }
 }

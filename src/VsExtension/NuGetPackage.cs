@@ -1,30 +1,28 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using EnvDTE;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using NuGet.Client.VisualStudio;
+using NuGet.Configuration;
+using NuGet.Options;
+using NuGet.PackageManagement;
 using NuGet.PackageManagement.UI;
-//*** using NuGet.Options;
-//using NuGet.VisualStudio;
-//*** using NuGet.VisualStudio11;
+using NuGet.PackageManagement.VisualStudio;
+using NuGet.ProjectManagement;
+using NuGet.Protocol.Core.Types;
+using NuGet.Protocol.VisualStudio;
 using NuGetConsole;
 using NuGetConsole.Implementation;
 using Resx = NuGet.PackageManagement.UI.Resources;
-using NuGet.ProjectManagement;
-using NuGet.PackageManagement;
-using NuGet.PackageManagement.VisualStudio;
-using NuGet.Configuration;
-using NuGet.Options;
-using NuGet.Client;
-using System.Runtime.Serialization.Formatters.Binary;
 
 namespace NuGetVSExtension
 {
@@ -72,9 +70,10 @@ namespace NuGetVSExtension
         private IVsMonitorSelection _vsMonitorSelection;
         private bool? _isVisualizerSupported;
         private IPackageRestoreManager _packageRestoreManager;
-        private ISourceRepositoryProvider _sourceRepositoryProvider;
+
         private ISettings _settings;
         private ISourceControlManagerProvider _sourceControlManagerProvider;
+        private IVsSourceControlTracker _vsSourceControlTracker;
         private ICommonOperations _commonOperations;
         private ISolutionManager _solutionManager;
         //*** private IDeleteOnRestartManager _deleteOnRestart;
@@ -88,7 +87,9 @@ namespace NuGetVSExtension
 
         private NuGetUIProjectContext _uiProjectContext;
 
-        NuGetSettings _nugetSettings;
+        private NuGetSettings _nugetSettings;
+
+        private OutputConsoleLogger _outputConsoleLogger;
 
         public NuGetPackage()
         {
@@ -143,19 +144,6 @@ namespace NuGetVSExtension
             }
         }
 
-        private ISourceRepositoryProvider SourceRepositoryProvider
-        {
-            get
-            {
-                if(_settings == null)
-                {
-                    _sourceRepositoryProvider = ServiceLocator.GetInstance<ISourceRepositoryProvider>();
-                    Debug.Assert(_sourceRepositoryProvider != null);
-                }
-                return _sourceRepositoryProvider;
-            }
-        }
-
         private ISettings Settings
         {
             get
@@ -178,6 +166,18 @@ namespace NuGetVSExtension
                     _sourceControlManagerProvider = ServiceLocator.GetInstanceSafe<ISourceControlManagerProvider>();
                 }
                 return _sourceControlManagerProvider;
+            }
+        }
+
+        private IVsSourceControlTracker VSSourceControlTracker
+        {
+            get
+            {
+                if(_vsSourceControlTracker == null)
+                {
+                    _vsSourceControlTracker = ServiceLocator.GetInstanceSafe<IVsSourceControlTracker>();
+                }
+                return _vsSourceControlTracker;
             }
         }
 
@@ -299,7 +299,11 @@ namespace NuGetVSExtension
                 }
             }
 
-            _uiProjectContext = new NuGetUIProjectContext(new OutputConsoleLogger(), SourceControlManagerProvider, CommonOperations);
+            _outputConsoleLogger = new OutputConsoleLogger(this);
+            _uiProjectContext = new NuGetUIProjectContext(
+                _outputConsoleLogger, 
+                SourceControlManagerProvider, 
+                CommonOperations);
 
             /* ****
             // when NuGet loads, if the current solution has some package
@@ -315,6 +319,8 @@ namespace NuGetVSExtension
             //       Exported IPackageRestoreManager is used by UI manual restore, Powershell manual restore and by VS extensibility package restore
             // var packageRestoreManagerForOnBuildPackageRestorer = new PackageRestoreManager(SourceRepositoryProvider, Settings, SolutionManager);
             OnBuildPackageRestorer = new OnBuildPackageRestorer(SolutionManager, PackageRestoreManager, this);
+
+            var vsSourceControlTracker = VSSourceControlTracker;
 
             LoadNuGetSettings();
         }
@@ -581,7 +587,7 @@ namespace NuGetVSExtension
 
             var model = new PackageManagerModel(uiController, uiContext);
             var vsWindowSearchHostfactory = ServiceLocator.GetGlobalService<SVsWindowSearchHostFactory, IVsWindowSearchHostFactory>();
-            var control = new PackageManagerControl(model, vsWindowSearchHostfactory);
+            var control = new PackageManagerControl(model, Settings, vsWindowSearchHostfactory);
             var windowPane = new PackageManagerWindowPane(control);
             var ppunkDocView = Marshal.GetIUnknownForObject(windowPane);
             var ppunkDocData = Marshal.GetIUnknownForObject(model);
@@ -751,7 +757,7 @@ namespace NuGetVSExtension
             var model = new PackageManagerModel(uiController, uiContext);
             model.SolutionName = solutionName;
             var vsWindowSearchHostfactory = ServiceLocator.GetGlobalService<SVsWindowSearchHostFactory, IVsWindowSearchHostFactory>();
-            var control = new PackageManagerControl(model, vsWindowSearchHostfactory);
+            var control = new PackageManagerControl(model, Settings, vsWindowSearchHostfactory);
             var windowPane = new PackageManagerWindowPane(control);
             var ppunkDocView = Marshal.GetIUnknownForObject(windowPane);
             var ppunkDocData = Marshal.GetIUnknownForObject(model);

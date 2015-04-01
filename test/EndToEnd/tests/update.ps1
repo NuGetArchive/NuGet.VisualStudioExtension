@@ -180,10 +180,11 @@ function Test-UpdateWithoutPackageInstalledThrows {
     $p = New-ClassLibrary
 
     # Act & Assert
-    Assert-Throws { $p | Update-Package elmah } "Unable to find package 'elmah'."
+    Assert-Throws { $p | Update-Package elmah } ("'elmah' was not installed in any project. Update failed.")
 }
 
-function Test-UpdateSolutionOnlyPackage {
+#function Test-UpdateSolutionOnlyPackage {
+function UpdateSolutionOnlyPackage {    
     param(
         $context
     )
@@ -203,7 +204,8 @@ function Test-UpdateSolutionOnlyPackage {
     Assert-PathExists (Join-Path $solutionDir packages\SolutionOnlyPackage.2.0\file2.txt)
 }
 
-function Test-UpdateSolutionOnlyPackageWhenAmbiguous {
+#function Test-UpdateSolutionOnlyPackageWhenAmbiguous {
+function UpdateSolutionOnlyPackageWhenAmbiguous {
     param(
         $context
     )
@@ -240,7 +242,8 @@ function Test-UpdatePackageResolvesDependenciesAcrossSources {
     Assert-Package $p Antlr
 }
 
-function Test-UpdateAmbiguousProjectLevelPackageNoInstalledInProjectThrows {
+#function Test-UpdateAmbiguousProjectLevelPackageNoInstalledInProjectThrows {
+function UpdateAmbiguousProjectLevelPackageNoInstalledInProjectThrows {
     # Arrange
     $p1 = New-ClassLibrary
     $p2 = New-FSharpLibrary
@@ -740,6 +743,7 @@ function Test-UpdatingDependentPackagesPicksLowestCompatiblePackages {
 function Test-UpdateAllPackagesInASingleProjectWithMultipleProjects {
     param(
         $context
+
     )
     # Arrange
     $p1 = New-WebApplication
@@ -751,14 +755,14 @@ function Test-UpdateAllPackagesInASingleProjectWithMultipleProjects {
     Update-Package -Source $context.RepositoryPath -ProjectName $p1.Name
 
     # Assert
-    Assert-Package $p1 jQuery 1.6.1
+    Assert-Package $p1 jQuery 2.1.3
     Assert-Package $p2 jQuery 1.5.1
-    Assert-Package $p1 jQuery.UI.Combined 1.8.13
+    Assert-Package $p1 jQuery.UI.Combined 1.11.4
     Assert-Package $p2 jQuery.UI.Combined 1.8.11
     Assert-SolutionPackage jQuery 1.5.1
-    Assert-SolutionPackage jQuery 1.6.1
+    Assert-SolutionPackage jQuery 2.1.3
     Assert-SolutionPackage jQuery.UI.Combined 1.8.11
-    Assert-SolutionPackage jQuery.UI.Combined 1.8.13
+    Assert-SolutionPackage jQuery.UI.Combined 1.11.4
 }
 
 function Test-UpdateAllPackagesInASingleProjectWithSafeFlagAndMultipleProjects {
@@ -1360,7 +1364,8 @@ function Test-ReinstallAllPackagesInAllProjectsInvokeUninstallAndInstallScripts
     Remove-Variable UninstallMagicScript -Scope Global 
 }
 
-function Test-ReinstallPackageReinstallPrereleaseDependencyPackages
+#function Test-ReinstallPackageReinstallPrereleaseDependencyPackages
+function ReinstallPackageReinstallPrereleaseDependencyPackages
 {
     param($context) 
     
@@ -1396,25 +1401,26 @@ function Test-FinishFailedUpdateOnSolutionOpen
     # Arrange
     $p = New-ConsoleApplication
 
-    $packageManager = $host.PrivateData.packageManagerFactory.CreatePackageManager()
-    $localRepositoryPath = $packageManager.LocalRepository.Source
-    $physicalFileSystem = New-Object NuGet.PhysicalFileSystem($localRepositoryPath)
+    $componentService = Get-VSComponentModel
+	$solutionManager = $componentService.GetService([NuGet.PackageManagement.ISolutionManager])
+	$setting = $componentService.GetService([NuGet.Configuration.ISettings])
+	$packageFolderPath = [NuGet.PackageManagement.PackagesFolderPathUtility]::GetPackagesFolderPath($solutionManager, $setting)
 
-    $p | Install-Package SolutionOnlyPackage -Version 1.0 -Source $context.RepositoryRoot
+	$p | Install-Package TestUpdatePackage -Version 1.0 -Source $context.RepositoryRoot
 
     # We will open a file handle preventing the deletion packages\SolutionOnlyPackage.1.0\file1.txt
     # causing the uninstall to fail to complete thereby forcing it to finish the next time the solution is opened
-    $filePath = Join-Path $localRepositoryPath "SolutionOnlyPackage.1.0\file1.txt"
+    $filePath = Join-Path $packageFolderPath "TestUpdatePackage.1.0.0.0\content\readme.txt"
     $fileStream = [System.IO.File]::Open($filePath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
 
     try {
         # Act
-        $p | Update-Package SolutionOnlyPackage -Source $context.RepositoryRoot
+        $p | Update-Package TestUpdatePackage -Source $context.RepositoryRoot
 
         # Assert
-        Assert-True $physicalFileSystem.DirectoryExists("SolutionOnlyPackage.1.0")
-        Assert-True $physicalFileSystem.FileExists("SolutionOnlyPackage.1.0.deleteme")
-        Assert-True $physicalFileSystem.DirectoryExists("SolutionOnlyPackage.2.0")
+        Assert-True [NuGet.ProjectManagement.FileSystemUtility]::DirectoryExists($packageFolderPath,"TestUpdatePackage.1.0.0.0")
+        Assert-True [NuGet.ProjectManagement.FileSystemUtility]::FileExists($packageFolderPath,"TestUpdatePackage.1.0.0.0.deleteme")
+        Assert-True [NuGet.ProjectManagement.FileSystemUtility]::DirectoryExists($packageFolderPath, "TestUpdatePackage.2.0.0.0")
     } finally {
         $fileStream.Close()
     }
@@ -1426,9 +1432,9 @@ function Test-FinishFailedUpdateOnSolutionOpen
     Open-Solution $solutionDir
 
     # Assert
-    Assert-False $physicalFileSystem.DirectoryExists("SolutionOnlyPackage.1.0")
-    Assert-False $physicalFileSystem.FileExists("SolutionOnlyPackage.1.0.deleteme")
-    Assert-True $physicalFileSystem.DirectoryExists("SolutionOnlyPackage.2.0")
+    Assert-False [NuGet.ProjectManagement.FileSystemUtility]::DirectoryExists($packageFolderPath,"TestUpdatePackage.1.0.0.0")
+    Assert-False [NuGet.ProjectManagement.FileSystemUtility]::FileExists($packageFolderPath,"TestUpdatePackage.1.0.0.0.deleteme")
+    Assert-True [NuGet.ProjectManagement.FileSystemUtility]::DirectoryExists($packageFolderPath, "TestUpdatePackage.2.0.0.0")
 }
 
 function Test-UpdatePackageThrowsIfMinClientVersionIsNotSatisfied
@@ -1449,7 +1455,8 @@ function Test-UpdatePackageThrowsIfMinClientVersionIsNotSatisfied
     Assert-Package $p "Kitty" -Version 1.0.0
 }
 
-function Test-UpdatePackageWhenAnUnusedVersionOfPackageIsPresentInPackagesFolder
+#function Test-UpdatePackageWhenAnUnusedVersionOfPackageIsPresentInPackagesFolder
+function UpdatePackageWhenAnUnusedVersionOfPackageIsPresentInPackagesFolder
 {
     param($context)
 
@@ -1481,7 +1488,8 @@ function Test-UpdatePackageWhenAnUnusedVersionOfPackageIsPresentInPackagesFolder
     Assert-SolutionPackage TestUpdatePackage 2.0.0
 }
 
-function Test-UpdatePackageThrowsWhenOnlyUnusedVersionsOfAPackageIsPresentInPackagesFolder
+#function Test-UpdatePackageThrowsWhenOnlyUnusedVersionsOfAPackageIsPresentInPackagesFolder
+function UpdatePackageThrowsWhenOnlyUnusedVersionsOfAPackageIsPresentInPackagesFolder
 {
     param($context)
 

@@ -1,5 +1,8 @@
 ﻿using Microsoft.CSharp.RuntimeBinder;
 using Microsoft.VisualStudio;
+#if VS14
+using Microsoft.VisualStudio.ProjectSystem;
+#endif
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using NuGet.Frameworks;
@@ -22,6 +25,8 @@ namespace NuGet.PackageManagement.VisualStudio
     public class VSMSBuildNuGetProjectSystem : IMSBuildNuGetProjectSystem
     {
         private const string BinDir = "bin";
+        private const string NuGetImportStamp = "NuGetPackageImportStamp";
+
         public VSMSBuildNuGetProjectSystem(EnvDTEProject envDTEProject, INuGetProjectContext nuGetProjectContext)
         {
             if(envDTEProject == null)
@@ -282,9 +287,14 @@ namespace NuGet.PackageManagement.VisualStudio
 
                 if (reference != null)
                 {
-                    // This happens if the assembly appears in any of the search paths that VS uses to locate assembly references.
+                    var path = GetReferencePath(reference);
+
+                    // If path != fullPath, we need to set CopyLocal thru msbuild by setting Private 
+                    // to true.
+                    // This happens if the assembly appears in any of the search paths that VS uses to 
+                    // locate assembly references.
                     // Most commonly, it happens if this assembly is in the GAC or in the output path.
-                    if (reference.Path != null && !reference.Path.Equals(fullPath, StringComparison.OrdinalIgnoreCase))
+                    if (path != null && !path.Equals(fullPath, StringComparison.OrdinalIgnoreCase))
                     {
                         // Get the msbuild project for this project
                         MicrosoftBuildEvaluationProject buildProject = EnvDTEProjectUtility.AsMicrosoftBuildEvaluationProject(EnvDTEProject);
@@ -315,8 +325,8 @@ namespace NuGet.PackageManagement.VisualStudio
                     }
                     else
                     {
-                        TrySetSpecificVersion(reference);
                         TrySetCopyLocal(reference);
+                        TrySetSpecificVersion(reference);
                     }
                 }
 
@@ -444,12 +454,38 @@ namespace NuGet.PackageManagement.VisualStudio
             }
             catch (NotSupportedException)
             {
-
             }
             catch (NotImplementedException)
             {
-
             }
+            catch (RuntimeBinderException)
+            {
+            }
+            catch (System.Runtime.InteropServices.COMException)
+            {
+            }
+        }
+
+        private static string GetReferencePath(dynamic reference)
+        {
+            try
+            {
+                return reference.Path;
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (NotImplementedException)
+            {
+            }
+            catch (RuntimeBinderException)
+            {
+            }
+            catch (System.Runtime.InteropServices.COMException)
+            {
+            }
+
+            return null;
         }
 
         // Set SpecificVersion to true
@@ -463,15 +499,15 @@ namespace NuGet.PackageManagement.VisualStudio
             }
             catch (NotSupportedException)
             {
-
             }
             catch (NotImplementedException)
             {
-
             }
             catch (RuntimeBinderException)
             {
-
+            }
+            catch (System.Runtime.InteropServices.COMException)
+            {
             }
         }
 
@@ -517,17 +553,53 @@ namespace NuGet.PackageManagement.VisualStudio
         /// Sets NuGetPackageImportStamp to a new random guid. This is a hack to let the project system know it is out of date.
         /// The value does not matter, it just needs to change.
         /// </summary>
-        protected static void UpdateImportStamp(EnvDTEProject envDTEProject)
+        protected static void UpdateImportStamp(EnvDTEProject envDTEProject, bool isCpsProjectSystem = false)
         {
             // There is no reason to call this for pre-Dev12 project systems.
             if (VSVersionHelper.VsMajorVersion >= 12)
             {
+#if VS14
+                // Switch to UI thread to update Import Stamp for Dev14.
+                if (isCpsProjectSystem && VSVersionHelper.IsVisualStudio2014)
+                {
+                    try
+                    {
+                        var projectServiceAccessor = ServiceLocator.GetInstance<IProjectServiceAccessor>();
+                        ProjectService projectService = projectServiceAccessor.GetProjectService();
+                        IThreadHandling threadHandling = projectService.Services.ThreadingPolicy;
+                        threadHandling.SwitchToUIThread();
+                    }
+                    catch (Exception ex)
+                    {
+                        ExceptionHelper.WriteToActivityLog(ex);
+                    }
+                }
+#endif
+
                 IVsBuildPropertyStorage propStore = VsHierarchyUtility.ToVsHierarchy(envDTEProject) as IVsBuildPropertyStorage;
                 if (propStore != null)
                 {
                     // <NuGetPackageImportStamp>af617720</NuGetPackageImportStamp>
                     string stamp = Guid.NewGuid().ToString().Split('-')[0];
-                    ErrorHandler.ThrowOnFailure(propStore.SetPropertyValue("NuGetPackageImportStamp", string.Empty, (uint)_PersistStorageType.PST_PROJECT_FILE, stamp));
+                    try
+                    {
+                        int r1 = propStore.SetPropertyValue(NuGetImportStamp, string.Empty, (uint)_PersistStorageType.PST_PROJECT_FILE, stamp);
+                    }
+                    catch (Exception ex1)
+                    {
+                        ExceptionHelper.WriteToActivityLog(ex1);
+                    }
+
+                    // Remove the NuGetImportStamp so that VC++ project file won't be updated with this stamp on disk,
+                    // which causes unnecessary source control pending changes. 
+                    try
+                    {
+                        int r2 = propStore.RemoveProperty(NuGetImportStamp, string.Empty, (uint)_PersistStorageType.PST_PROJECT_FILE);
+                    }
+                    catch (Exception ex2)
+                    {
+                        ExceptionHelper.WriteToActivityLog(ex2);
+                    }
                 }
             }
         }
@@ -583,6 +655,43 @@ namespace NuGet.PackageManagement.VisualStudio
 
         public virtual void EndProcessing()
         {
+        }
+
+        public void DeleteDirectory(string path, bool recursive)
+        {
+            // Only delete this folder if it is empty and we didn't specify that we want to recurse
+            if (!recursive && (FileSystemUtility.GetFiles(ProjectFullPath, path, "*.*", recursive).Any() || FileSystemUtility.GetDirectories(ProjectFullPath, path).Any()))
+            {
+                NuGetProjectContext.Log(MessageLevel.Warning, NuGet.ProjectManagement.Strings.Warning_DirectoryNotEmpty, path);
+                return;
+            }
+
+            // Workaround for TFS update issue. If we're bound to TFS, do not try and delete directories.
+            if (SourceControlUtility.GetSourceControlManager(NuGetProjectContext) == null && EnvDTEProjectUtility.DeleteProjectItem(EnvDTEProject, path))
+            {
+                NuGetProjectContext.Log(MessageLevel.Debug, NuGet.ProjectManagement.Strings.Debug_RemovedFolder, path);
+            }
+        }
+
+        public IEnumerable<string> GetFiles(string path, string filter, bool recursive)
+        {
+            if (recursive)
+            {
+                throw new NotSupportedException();
+            }
+            else
+            {
+                // Get all physical files
+                return from p in EnvDTEProjectUtility.GetChildItems(EnvDTEProject, path, filter, NuGetVSConstants.VsProjectItemKindPhysicalFile)
+                       select p.Name;
+            }
+        }
+
+        public IEnumerable<string> GetDirectories(string path)
+        {
+            // Get all physical folders
+            return from p in EnvDTEProjectUtility.GetChildItems(EnvDTEProject, path, "*.*", NuGetVSConstants.VsProjectItemKindPhysicalFolder)
+                   select p.Name;
         }
     }
 }

@@ -1,7 +1,6 @@
-﻿using NuGet.Client.VisualStudio;
-using NuGet.Frameworks;
-using NuGet.Packaging;
+﻿using NuGet.Packaging;
 using NuGet.ProjectManagement;
+using NuGet.Protocol.VisualStudio;
 using NuGet.Versioning;
 using System;
 using System.Collections.Generic;
@@ -286,7 +285,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             }
             else
             {
-                LogCore(MessageLevel.Info, Resources.Cmdlet_NoPackageUpdates);
+                LogCore(MessageLevel.Info, string.Format(Resources.Cmdlet_NoPackageUpdates, project.GetMetadata<string>(NuGetProjectMetadataKeys.Name)));
             }
         }
 

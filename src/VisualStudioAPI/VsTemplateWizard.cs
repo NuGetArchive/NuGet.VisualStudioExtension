@@ -6,11 +6,10 @@ using System.Linq;
 using System.Xml.Linq;
 using EnvDTE;
 using Microsoft.VisualStudio.TemplateWizard;
-using NuGet.Client;
 using NuGet.Configuration;
-using NuGet.ProjectManagement;
 using NuGet.PackageManagement;
-using NuGet.PackageManagement.VisualStudio;
+using NuGet.ProjectManagement;
+using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 using NuGet.VisualStudio.Resources;
 using NuGetConsole;
@@ -20,6 +19,7 @@ namespace NuGet.VisualStudio
     [Export(typeof(IVsTemplateWizard))]
     public class VsTemplateWizard : IVsTemplateWizard
     {
+        private const string DefaultRepositoryDirectory = "packages";
         private readonly IVsPackageInstaller _installer;
         private IEnumerable<PreinstalledPackageConfiguration> _configurations;
 
@@ -50,9 +50,6 @@ namespace NuGet.VisualStudio
 
             _preinstalledPackageInstaller = new PreinstalledPackageInstaller(_packageServices, _solutionManager, _settings, _sourceProvider, (VsPackageInstaller)_installer);
         }
-
-        [Import]
-        public Lazy<IRepositorySettings> RepositorySettings { get; set; }
 
         private IEnumerable<PreinstalledPackageConfiguration> GetConfigurationsFromVsTemplateFile(string vsTemplatePath)
         {
@@ -227,7 +224,7 @@ namespace NuGet.VisualStudio
             {
                 if (configuration.Packages.Any())
                 {
-                    _preinstalledPackageInstaller.PerformPackageInstall(_installer, project, configuration, RepositorySettings, ShowWarningMessage, ShowErrorMessage);
+                    _preinstalledPackageInstaller.PerformPackageInstall(_installer, project, configuration, ShowWarningMessage, ShowErrorMessage);
                 }
             }
         }
@@ -266,7 +263,8 @@ namespace NuGet.VisualStudio
                 string solutionRepositoryPath = null;
                 if (_dte.Solution != null && _dte.Solution.IsOpen)
                 {
-                    solutionRepositoryPath = RepositorySettings.Value.RepositoryPath;
+                    //solutionRepositoryPath = RepositorySettings.Value.RepositoryPath;
+                    solutionRepositoryPath = PackagesFolderPathUtility.GetPackagesFolderPath(_solutionManager, _settings);
                 }
                 else
                 {
@@ -278,11 +276,11 @@ namespace NuGet.VisualStudio
                         // In that case, we have to use forward slash instead of backward one.
                         if (Uri.IsWellFormedUriString(solutionDir, UriKind.Absolute))
                         {
-                            solutionRepositoryPath = PathUtility.EnsureTrailingForwardSlash(solutionDir) + NuGet.VisualStudio.RepositorySettings.DefaultRepositoryDirectory;
+                            solutionRepositoryPath = PathUtility.EnsureTrailingForwardSlash(solutionDir) + DefaultRepositoryDirectory;
                         }
                         else
                         {
-                            solutionRepositoryPath = Path.Combine(solutionDir, NuGet.VisualStudio.RepositorySettings.DefaultRepositoryDirectory);
+                            solutionRepositoryPath = Path.Combine(solutionDir, DefaultRepositoryDirectory);
                         }
                     }
                 }

@@ -151,7 +151,7 @@ function Test-PackageWithIncompatibleAssembliesRollsInstallBack {
     $p = New-WebApplication
 
     # Act & Assert
-    Assert-Throws { Install-Package BingMapAppSDK -Project $p.Name -Source $context.RepositoryPath } "Could not install package 'BingMapAppSDK 1.0.1011.1716'. You are trying to install this package into a project that targets '.NETFramework, Version=v4.0', but the package does not contain any assembly references or content files that are compatible with that framework. For more information, contact the package author."
+    Assert-Throws { Install-Package BingMapAppSDK -Project $p.Name -Source $context.RepositoryPath } "Could not install package 'BingMapAppSDK 1.0.1011.1716'. You are trying to install this package into a project that targets '.NETFramework, Version=v4.5', but the package does not contain any assembly references or content files that are compatible with that framework. For more information, contact the package author."
     Assert-Null (Get-ProjectPackage $p BingMapAppSDK 1.0.1011.1716)
     Assert-Null (Get-SolutionPackage BingMapAppSDK 1.0.1011.1716)
 }
@@ -425,7 +425,7 @@ function Test-InstallPackageWithUnsupportedReference {
     $p = New-ClassLibrary
     
     # Act
-    Assert-Throws { Install-Package PackageWithUnsupportedReferences -Source $context.RepositoryRoot } "Could not install package 'PackageWithUnsupportedReferences 1.0'. You are trying to install this package into a project that targets '.NETFramework, Version=v4.0', but the package does not contain any assembly references or content files that are compatible with that framework. For more information, contact the package author."
+    Assert-Throws { Install-Package PackageWithUnsupportedReferences -Source $context.RepositoryRoot } "Could not install package 'PackageWithUnsupportedReferences 1.0'. You are trying to install this package into a project that targets '.NETFramework, Version=v4.5', but the package does not contain any assembly references or content files that are compatible with that framework. For more information, contact the package author."
 
     # Assert    
     Assert-Null (Get-ProjectPackage $p PackageWithUnsupportedReferences)
@@ -469,14 +469,18 @@ function Test-InstallPackageWithGacReferencesIntoMultipleProjectTypes {
     )
 
     # Arrange
-    $projects = @((New-ClassLibrary), (New-WebSite), (New-FSharpLibrary))
+	$a = New-ClassLibrary
+	$b = New-WebSite
+	$c = New-FSharpLibrary
+	$projects = @($a, $b, $c)
     
-    # Act
-    $projects | Install-Package PackageWithGacReferences -Source $context.RepositoryRoot
-    
+	# Act
+    $a | Install-Package PackageWithGacReferences -Source $context.RepositoryRoot
+	$b | Install-Package PackageWithGacReferences -Source $context.RepositoryRoot
+	$c | Install-Package PackageWithGacReferences -Source $context.RepositoryRoot
+	
     # Assert
     $projects | %{ Assert-Reference $_ System.Web }
-    Assert-Reference $projects[1] System.Web
 }
 
 function Test-InstallPackageWithGacReferenceIntoWindowsPhoneProject {   
@@ -1379,7 +1383,7 @@ function Test-InstallPackageWithReferences {
     $p1 | Install-Package -Source $context.RepositoryRoot -Id PackageWithReferences
 
     # Assert - 1
-    Assert-Reference $p1 ClassLibrary1
+    Assert-Reference $p1 B
 
     New-Solution "Test"
     # Arrange - 2
@@ -1779,7 +1783,8 @@ function Test-InstallPackageExecuteCorrectInstallScriptsAccordingToTargetFramewo
     
     # Assert
     Assert-Package $project TestTargetFxPSScripts
-    Assert-True ($global:InstallVar -eq 100)
+    Write-Host 'net40 folder will be chosen over silverlight'
+    Assert-True ($global:InstallVar -eq 1)
 
     # Clean up
     Remove-Variable InstallVar -Scope Global
@@ -2724,6 +2729,109 @@ function Test-InstallPackageWithoutDependencyVersion
     # Assert
     Assert-Package $p A 1.0
     Assert-Package $p B 1.0.0
+}
+
+# Tests that passing in online path to a packages.config file to 
+# Install-Package works.
+function Test-InstallPackagesConfigOnline
+{
+    param($context)
+
+    # Arrange
+    $p = New-ClassLibrary
+
+    # Act
+	$p | Install-Package Newtonsoft.Json
+    $p | Install-Package https://raw.githubusercontent.com/NuGet/json-ld.net/master/src/JsonLD/packages.config
+
+    # Assert
+    Assert-Package $p Newtonsoft.Json 4.0.1
+}
+
+# Tests that passing in local path to a packages.config file to 
+# Install-Package works.
+function Test-InstallPackagesConfigLocal
+{
+    param($context)
+
+    # Arrange
+    $p = New-ClassLibrary
+	$pathToPackagesConfig = Join-Path $context.RepositoryPath "packages.config"
+
+    # Act
+    $p | Install-Package $pathToPackagesConfig
+
+    # Assert
+    Assert-Package $p jQuery.validation 1.13.1
+	Assert-Package $p jQuery 2.1.3
+	Assert-Package $p EntityFramework 6.1.3-beta1
+}
+
+# Tests that passing in online path to a .nupkg file to 
+# Install-Package works.
+function Test-InstallPackagesNupkgOnline
+{
+    param($context)
+
+    # Arrange
+    $p = New-ClassLibrary
+
+    # Act
+    $p | Install-package https://az320820.vo.msecnd.net/packages/microsoft.aspnet.mvc.4.0.20505.nupkg
+
+    # Assert
+    Assert-Package $p microsoft.aspnet.mvc 4.0.20505.0
+	Assert-Package $p microsoft.aspnet.webpages 2.0.20505
+	Assert-Package $p microsoft.aspnet.razor 2.0.20505
+	Assert-Package $p microsoft.web.infrastructure 1.0.0
+}
+
+# Tests that passing in local path to a .nupkg file to 
+# Install-Package works.
+function Test-InstallPackagesNupkgLocal
+{
+    param($context)
+
+    # Arrange
+    $p = New-ClassLibrary
+	$pathToPackagesNupkg = Join-Path $context.RepositoryPath "jQuery.2.0.2.nupkg"
+
+    # Act
+    $p | Install-Package $pathToPackagesNupkg
+
+    # Assert
+	Assert-Package $p jQuery 2.0.2
+}
+
+# Tests that Install-Package -Force and Install-Package -Force -WhatIf works.
+function Test-InstallPackageUsingForceSwitch
+{
+    param($context)
+
+    # Arrange
+    $p = New-ClassLibrary
+
+    # Act 1
+	$p | Install-Package jQuery -version 1.4.4
+	$p | Install-Package jQuery -version 2.1.3 -Force -WhatIf
+    $p | Install-Package jQuery -version 2.1.3 -Force
+
+    # Assert 1
+	Assert-Package $p jQuery 2.1.3
+
+	# Act 2 
+	$p | Install-Package jQuery -version 2.1.3 -Force -WhatIf
+    $p | Install-Package jQuery -version 2.1.3 -Force
+
+    # Assert 2
+	Assert-Package $p jQuery 2.1.3
+
+	# Act 3
+	$p | Install-Package jQuery -Force
+    $p | Install-Package jQuery -version 2.1.3 -Force
+
+    # Assert 2
+	Assert-Package $p jQuery 2.1.3
 }
 
 # Tests that passing in online path to a packages.config file to 

@@ -1,9 +1,4 @@
-﻿using NuGet.Packaging;
-using NuGet.PackagingCore;
-using NuGet.ProjectManagement;
-using NuGet.Resolver;
-using NuGet.Versioning;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,8 +6,12 @@ using System.Management.Automation;
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
+using NuGet.Packaging;
+using NuGet.Packaging.Core;
+using NuGet.ProjectManagement;
+using NuGet.Resolver;
+using NuGet.Versioning;
 
 namespace NuGet.PackageManagement.PowerShellCmdlets
 {
@@ -50,7 +49,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
         protected override void ProcessRecordCore()
         {
-            base.ProcessRecordCore();
+            Preprocess();
 
             SubscribeToProgressEvents();
             if (!_readFromPackagesConfig && !_readFromDirectPackagePath && _nugetVersion == null)
@@ -62,7 +61,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                 IEnumerable<PackageIdentity> identities = GetPackageIdentities();
                 Task.Run(() => InstallPackages(identities));
             }
-            WaitAndLogFromMessageQueue();
+            WaitAndLogPackageActions();
             UnsubscribeFromProgressEvents();
         }
 
@@ -85,7 +84,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             }
             finally
             {
-                completeEvent.Set();
+                blockingCollection.Add(new ExecutionCompleteMessage());
             }
         }
 
@@ -105,7 +104,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             }
             finally
             {
-                completeEvent.Set();
+                blockingCollection.Add(new ExecutionCompleteMessage());
             }
         }
 
@@ -127,7 +126,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                     if (UriHelper.IsHttpSource(Id))
                     {
                         _isHttp = true;
-                        Source = PackageManager.PackagesFolderSourceRepository.PackageSource.Source;
+                        Source = Path.GetTempPath();
                     }
                     else
                     {
@@ -212,6 +211,19 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                         identities = packageRefs.Select(v => v.PackageIdentity);
                     }
                 }
+
+                // Set _allowPrerelease to true if any of the identities is prerelease version.
+                if (identities != null && identities.Any())
+                {
+                    foreach (PackageIdentity identity in identities)
+                    {
+                        if (identity.Version.IsPrerelease)
+                        {
+                            _allowPrerelease = true;
+                            break;
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -253,6 +265,12 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                     // Example: install-package c:\temp\packages\jQuery.1.10.2.nupkg
                     identity = ParsePackageIdentityFromNupkgPath(Id, @"\");
                 }
+
+                // Set _allowPrerelease to true if identity parsed is prerelease version.
+                if (identity != null && identity.Version != null && identity.Version.IsPrerelease)
+                {
+                    _allowPrerelease = true;
+                }
             }
             catch (Exception ex)
             {
@@ -293,6 +311,11 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                     }
                 }
                 NuGetVersion nVersion = PowerShellCmdletsUtility.GetNuGetVersionFromString(builderForVersion.ToString().TrimEnd('.'));
+                // Set _allowPrerelease to true if nVersion is prerelease version.
+                if (nVersion != null && nVersion.IsPrerelease)
+                {
+                    _allowPrerelease = true;
+                }
                 return new PackageIdentity(builderForId.ToString().TrimEnd('.'), nVersion);
             }
             return null;
@@ -312,6 +335,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                     _versionSpecifiedPrerelease = true;
                 }
             }
+            _allowPrerelease = IncludePrerelease.IsPresent || _versionSpecifiedPrerelease;
         }
 
         /// <summary>
@@ -321,7 +345,6 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         {
             get
             {
-                _allowPrerelease = IncludePrerelease.IsPresent || _versionSpecifiedPrerelease;
                 _context = new ResolutionContext(GetDependencyBehavior(), _allowPrerelease, false);
                 return _context;
             }

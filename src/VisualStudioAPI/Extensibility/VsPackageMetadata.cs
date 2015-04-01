@@ -1,10 +1,9 @@
 ﻿extern alias Legacy;
 using LegacyNuGet = Legacy.NuGet;
-
-using NuGet.PackagingCore;
 using System.Collections.Generic;
 using System.Linq;
-
+using NuGet.Packaging.Core;
+using NuGet.Versioning;
 
 namespace NuGet.VisualStudio
 {
@@ -24,10 +23,10 @@ namespace NuGet.VisualStudio
         public VsPackageMetadata(PackageIdentity package, string title, IEnumerable<string> authors, string description, string installPath)
         {
             _package = package;
-            _installPath = installPath;
-            _title = title;
-            _authors = authors;
-            _description = description;
+            _installPath = installPath ?? string.Empty;
+            _title = title ?? package.Id;
+            _authors = authors ?? Enumerable.Empty<string>();
+            _description = description ?? string.Empty;
         }
 
         public string Id

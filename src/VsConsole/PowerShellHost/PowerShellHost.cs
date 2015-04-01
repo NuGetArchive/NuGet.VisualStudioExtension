@@ -1,11 +1,6 @@
 using EnvDTE;
-using NuGet.Client;
-using NuGet.Configuration;
-using NuGet.PackageManagement;
 using NuGet.PackageManagement.VisualStudio;
-using NuGet.Packaging;
-using NuGet.PackagingCore;
-using NuGet.ProjectManagement;
+using NuGet.Resolver;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -17,6 +12,12 @@ using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Threading;
 using System.Threading.Tasks;
+using NuGet.PackageManagement;
+using NuGet.Protocol.Core.Types;
+using NuGet.Configuration;
+using NuGet.ProjectManagement;
+using NuGet.Packaging.Core;
+using NuGet.Packaging;
 
 namespace NuGetConsole.Host.PowerShell.Implementation
 {
@@ -335,15 +336,26 @@ namespace NuGetConsole.Host.PowerShell.Implementation
                     string packagesFolderPath = packageManager.PackagesFolderSourceRepository.PackageSource.Source;
                     foreach (var package in sortedPackages)
                     {
-                        string toolsPath = Path.Combine(packagesFolderPath, package.ToString(), "tools");
+                        PackagePathResolver packagePathResolver = new PackagePathResolver(packagesFolderPath);
+                        string pathToPackage = packagePathResolver.GetInstalledPath(package);
+                        string toolsPath = Path.Combine(pathToPackage, "tools");
                         AddPathToEnvironment(toolsPath);
                         Runspace.ExecuteScript(toolsPath, PowerShellScripts.Init, package);
                     }
                 }
                 catch (Exception ex)
                 {
-                    // if execution of Init scripts fails, do not let it crash our console
-                    ReportError(ex);
+                    // When Packages folder is not present, NuGetResolverInputException will be thrown
+                    // as resolving DependencyInfo requires the presence of Packages folder.
+                    if (ex.InnerException is NuGetResolverInputException)
+                    {
+                        // Silently fail.
+                    }
+                    else
+                    {
+                        // if execution of Init scripts fails, do not let it crash our console
+                        ReportError(ex);
+                    }
 
                     ExceptionHelper.WriteToActivityLog(ex);
                 }

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using NuGet.Client;
 using NuGet.PackageManagement;
 using NuGet.PackageManagement.UI;
+using NuGet.Protocol.Core.Types;
 
 namespace NuGetVSExtension
 {
@@ -33,7 +33,7 @@ namespace NuGetVSExtension
             _package.AddWindowSettings(key, obj);
         }
 
-        public override void SaveSettings()
+        public override void PersistSettings()
         {
             _package.SaveNuGetSettings();
         }

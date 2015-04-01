@@ -91,7 +91,7 @@ function Get-ProjectPackage {
     
     if($Version) {
         $actualVersion = [NuGet.Versioning.NuGetVersion]::Parse($Version)
-        $packages = $packages | ?{ $_.Version -eq $actualVersion }
+        $packages = $packages | ?{ $_.PackageIdentity.Version -eq $actualVersion }
     }
     
     $packages
@@ -140,7 +140,7 @@ function Assert-Package {
     $packagesInPackagesConfig = Get-InstalledPackageReferencesFromProject $packagesConfigNuGetProject
     if($Version) {
         $actualVersion = [NuGet.Versioning.NuGetVersion]::Parse($Version)
-        $packageIdentity = New-Object NuGet.PackagingCore.PackageIdentity($Id, $actualVersion)
+        $packageIdentity = New-Object NuGet.Packaging.Core.PackageIdentity($Id, $actualVersion)
         Assert-NotNull ($packagesInPackagesConfig | where { $_.PackageIdentity.Equals($packageIdentity) }) "Package $Id $Version is not referenced in $($Project.Name)"
     }
     else
@@ -175,7 +175,7 @@ function Assert-NoPackage {
     
     if($Version) {
         $actualVersion = [NuGet.Versioning.NuGetVersion]::Parse($Version)
-        $packageIdentity = New-Object NuGet.PackagingCore.PackageIdentity($Id, $actualVersion)
+        $packageIdentity = New-Object NuGet.Packaging.Core.PackageIdentity($Id, $actualVersion)
         Assert-Null ((Get-InstalledPackageReferencesFromProject $packagesConfigNuGetProject) | where { $_.PackageIdentity.Equals($packageIdentity) }) "Package $Id $Version is not referenced in $($Project.Name)"
     }
     else

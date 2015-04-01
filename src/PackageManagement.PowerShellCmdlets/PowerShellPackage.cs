@@ -1,11 +1,11 @@
 ﻿extern alias Legacy;
-using LegacyNuGet = Legacy.NuGet;
-using NuGet.Client.VisualStudio;
 using NuGet.Packaging;
 using NuGet.ProjectManagement;
+using NuGet.Protocol.VisualStudio;
 using NuGet.Versioning;
 using System.Collections.Generic;
 using System.Linq;
+using LegacyNuGet = Legacy.NuGet;
 
 namespace NuGet.PackageManagement.PowerShellCmdlets
 {
@@ -18,7 +18,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
         public IEnumerable<NuGetVersion> Versions { get; set; }
 
-        public Legacy.NuGet.SemanticVersion Version { get; set; }
+        public LegacyNuGet.SemanticVersion Version { get; set; }
     }
 
     /// <summary>
@@ -30,7 +30,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
         public IEnumerable<NuGetVersion> Versions { get; set; }
 
-        public Legacy.NuGet.SemanticVersion Version { get; set; }
+        public LegacyNuGet.SemanticVersion Version { get; set; }
 
         public string ProjectName { get; set; }
 
@@ -51,7 +51,9 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                     PowerShellInstalledPackage view = new PowerShellInstalledPackage();
                     view.Id = package.PackageIdentity.Id;
                     view.Versions = new List<NuGetVersion>() { package.PackageIdentity.Version };
-                    view.Version = Legacy.NuGet.SemanticVersion.Parse(package.PackageIdentity.Version.ToNormalizedString());
+                    LegacyNuGet.SemanticVersion sVersion;
+                    LegacyNuGet.SemanticVersion.TryParse(package.PackageIdentity.Version.ToNormalizedString(), out sVersion);
+                    view.Version = sVersion;
                     view.ProjectName = entry.Key.GetMetadata<string>(NuGetProjectMetadataKeys.Name);
                     views.Add(view);
                 }
@@ -69,7 +71,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
         public IEnumerable<NuGetVersion> Versions { get; set; }
 
-        public Legacy.NuGet.SemanticVersion Version { get; set; }
+        public LegacyNuGet.SemanticVersion Version { get; set; }
 
         public string Description { get; set; }
 
@@ -95,7 +97,9 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                             package.Versions = data.Versions.OrderByDescending(v => v);
                             if (package.Versions != null && package.Versions.Any())
                             {
-                                package.Version = Legacy.NuGet.SemanticVersion.Parse(package.Versions.FirstOrDefault().ToNormalizedString());
+                                LegacyNuGet.SemanticVersion sVersion;
+                                LegacyNuGet.SemanticVersion.TryParse(package.Versions.FirstOrDefault().ToNormalizedString(), out sVersion);
+                                package.Version = sVersion;
                             }
                         }
                         break;
@@ -105,7 +109,9 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                             package.Versions = new List<NuGetVersion>() { nVersion };
                             if (nVersion != null)
                             {
-                                package.Version = Legacy.NuGet.SemanticVersion.Parse(nVersion.ToNormalizedString());
+                                LegacyNuGet.SemanticVersion sVersion;
+                                LegacyNuGet.SemanticVersion.TryParse(nVersion.ToNormalizedString(), out sVersion);
+                                package.Version = sVersion;
                             }
                         }
                         break;
@@ -126,7 +132,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
         public IEnumerable<NuGetVersion> Versions { get; set; }
 
-        public Legacy.NuGet.SemanticVersion Version { get; set; }
+        public LegacyNuGet.SemanticVersion Version { get; set; }
 
         public string Description { get; set; }
 
@@ -152,7 +158,9 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                         package.Versions = data.Versions.Where(p => p > version).OrderByDescending(v => v);
                         if (package.Versions != null && package.Versions.Any())
                         {
-                            package.Version = Legacy.NuGet.SemanticVersion.Parse(package.Versions.FirstOrDefault().ToNormalizedString());
+                            LegacyNuGet.SemanticVersion sVersion;
+                            LegacyNuGet.SemanticVersion.TryParse(package.Versions.FirstOrDefault().ToNormalizedString(), out sVersion);
+                            package.Version = sVersion;
                         }
                     }
                     break;
@@ -162,7 +170,9 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                         if (nVersion != null)
                         {
                             package.Versions = new List<NuGetVersion>() { nVersion };
-                            package.Version = Legacy.NuGet.SemanticVersion.Parse(nVersion.ToNormalizedString());
+                            LegacyNuGet.SemanticVersion sVersion;
+                            LegacyNuGet.SemanticVersion.TryParse(nVersion.ToNormalizedString(), out sVersion);
+                            package.Version = sVersion;
                         }
                     }
                     break;

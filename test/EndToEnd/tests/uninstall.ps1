@@ -150,7 +150,7 @@ function Test-UninstallPackageThatIsNotInstalledThrows {
     $p = New-ClassLibrary
 
     # Act & Assert
-    Assert-Throws { $p | Uninstall-Package elmah } "Unable to find package 'elmah'."
+    Assert-Throws { $p | Uninstall-Package elmah } ("Package 'elmah' to be uninstalled could not be found in project '" + $p.Name + "'")
 }
 
 function Test-UninstallPackageThatIsInstalledInAnotherProjectThrows {
@@ -160,10 +160,11 @@ function Test-UninstallPackageThatIsInstalledInAnotherProjectThrows {
     $p1 | Install-Package elmah -Version 1.1
 
     # Act & Assert
-    Assert-Throws { $p2 | Uninstall-Package elmah } "Unable to find package 'elmah' in '$($p2.Name)'."
+    Assert-Throws { $p2 | Uninstall-Package elmah } ("Package 'elmah' to be uninstalled could not be found in project '" + $p2.Name + "'")
 }
 
-function Test-UninstallSolutionOnlyPackage {
+#function Test-UninstallSolutionOnlyPackage {
+function UninstallSolutionOnlyPackage {
     param(
         $context
     )
@@ -179,7 +180,8 @@ function Test-UninstallSolutionOnlyPackage {
     Assert-Null (Get-SolutionPackage SolutionOnlyPackage 2.0)
 }
 
-function Test-UninstallSpecificPackageThrowsIfNotInstalledInProject {
+#function Test-UninstallSpecificPackageThrowsIfNotInstalledInProject {
+function UninstallSpecificPackageThrowsIfNotInstalledInProject {
     # Arrange
     $p1 = New-ClassLibrary
     $p2 = New-FSharpLibrary
@@ -206,7 +208,8 @@ function Test-UninstallSpecificVersionOfPackage {
     Assert-SolutionPackage Antlr 3.1.3.42154
 }
 
-function Test-UninstallSolutionOnlyPackageWhenAmbiguous {
+#function Test-UninstallSolutionOnlyPackageWhenAmbiguous {
+function UninstallSolutionOnlyPackageWhenAmbiguous {    
     param(
         $context
     )
@@ -245,11 +248,11 @@ function Test-UninstallPackageWorksWithPackagesHavingSameNames {
     $p5 = New-ConsoleApplication 'ProjectA'
 
     # Act
-    Get-ProjectName -All | Install-Package elmah -Version 1.1
+    Get-Project -All | Install-Package elmah -Version 1.1
     $all = @( $p1, $p2, $p3, $p4, $p5 )
     $all | % { Assert-Package $_ elmah }
 
-    Get-ProjectName -All | Uninstall-Package elmah
+    Get-Project -All | Uninstall-Package elmah
 
     # Assert
     $all | % { Assert-Null (Get-ProjectPackage $_ elmah) }
@@ -555,7 +558,8 @@ function Test-UninstallPackageInvokeInstallScriptWhenProjectNameHasBrackets {
     Remove-Variable UninstallPackageMessages -Scope Global
 }
 
-function Test-UninstallPackageRemoveSolutionPackagesConfig
+#function Test-UninstallPackageRemoveSolutionPackagesConfig
+function UninstallPackageRemoveSolutionPackagesConfig
 {
     param(
         $context
@@ -587,7 +591,7 @@ function Test-UninstallPackageRemoveSolutionPackagesConfig
     Assert-False (Test-Path $configFile)
 }
 
-function Test-UninstallPackageRemoveEntryFromSolutionPackagesConfig
+function Test-UninstallSolutionPackageRemoveEntryFromProjectPackagesConfig
 {
     param(
         $context
@@ -602,7 +606,7 @@ function Test-UninstallPackageRemoveEntryFromSolutionPackagesConfig
     $solutionFile = Get-SolutionPath
     $solutionDir = Split-Path $solutionFile -Parent
 
-    $configFile = "$solutionDir\.nuget\packages.config"
+    $configFile = "$solutionDir\" + $a.Name + "\packages.config"
     
     Assert-True (Test-Path $configFile)
 
@@ -610,8 +614,8 @@ function Test-UninstallPackageRemoveEntryFromSolutionPackagesConfig
     Assert-AreEqual 5 $content.Length
     Assert-AreEqual '<?xml version="1.0" encoding="utf-8"?>' $content[0]
     Assert-AreEqual '<packages>' $content[1]
-    Assert-AreEqual '  <package id="RazorGenerator.MsBuild" version="1.3.2.0" />' $content[2]
-    Assert-AreEqual '  <package id="SolutionLevelPkg" version="1.0.0" />' $content[3]
+    Assert-AreEqual '  <package id="RazorGenerator.MsBuild" version="1.3.2" targetFramework="net45" userInstalled="true" />' $content[2]
+    Assert-AreEqual '  <package id="SolutionLevelPkg" version="1.0.0" targetFramework="net45" userInstalled="true" />' $content[3]
     Assert-AreEqual '</packages>' $content[4]
 
     # Act
@@ -745,7 +749,7 @@ function Test-UninstallPackageUseTargetFxPersistedInPackagesConfigToRemoveConten
     $projectName = $p.Name
     $p.Properties.Item("TargetFrameworkMoniker").Value = '.NETFramework,Version=3.5'
 
-    $p = Get-ProjectName $projectName
+    $p = Get-Project $projectName
 
     Uninstall-Package 'PackageA' -ProjectName $projectName -RemoveDependencies
     
@@ -777,7 +781,7 @@ function Test-UninstallPackageUseTargetFxPersistedInPackagesConfigToRemoveAssemb
     $projectName = $p.Name
     $p.Properties.Item("TargetFrameworkMoniker").Value = '.NETFramework,Version=3.5'
 
-    $p = Get-ProjectName $projectName
+    $p = Get-Project $projectName
 
     Uninstall-Package 'PackageA' -ProjectName $projectName -RemoveDependencies
     
@@ -807,7 +811,7 @@ function Test-UninstallPackageUseTargetFxPersistedInPackagesConfigToInvokeUninst
 
     $global:UninstallVar = 0
 
-    $p = Get-ProjectName $projectName
+    $p = Get-Project $projectName
     Uninstall-Package 'PackageA' -ProjectName $projectName
     
     # Assert
@@ -841,15 +845,16 @@ function Test-FinishFailedUninstallOnSolutionOpenOfProjectLevelPackage
     # Arrange
     $p = New-ConsoleApplication
 
-    $packageManager = $host.PrivateData.packageManagerFactory.CreatePackageManager()
-    $localRepositoryPath = $packageManager.LocalRepository.Source
-    $physicalFileSystem = New-Object NuGet.PhysicalFileSystem($localRepositoryPath)
+    $componentService = Get-VSComponentModel
+	$solutionManager = $componentService.GetService([NuGet.PackageManagement.ISolutionManager])
+	$setting = $componentService.GetService([NuGet.Configuration.ISettings])
+	$packageFolderPath = [NuGet.PackageManagement.PackagesFolderPathUtility]::GetPackagesFolderPath($solutionManager, $setting)
 
     $p | Install-Package PackageWithTextFile -Version 1.0 -Source $context.RepositoryRoot
 
     # We will open a file handle preventing the deletion packages\PackageWithTextFile.1.0\content\text
     # causing the uninstall to fail to complete thereby forcing it to finish the next time the solution is opened
-    $filePath = Join-Path $localRepositoryPath "PackageWithTextFile.1.0\content\text"
+    $filePath = Join-Path $packageFolderPath "PackageWithTextFile.1.0\content\text"
     $fileStream = [System.IO.File]::Open($filePath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
 
     try {
@@ -857,8 +862,8 @@ function Test-FinishFailedUninstallOnSolutionOpenOfProjectLevelPackage
         $p | Uninstall-Package PackageWithTextFile
 
         # Assert
-        Assert-True $physicalFileSystem.DirectoryExists("PackageWithTextFile.1.0")
-        Assert-True $physicalFileSystem.FileExists("PackageWithTextFile.1.0.deleteme")
+        Assert-True [NuGet.ProjectManagement.FileSystemUtility]::DirectoryExists("PackageWithTextFile.1.0.0.0")
+        Assert-True [NuGet.ProjectManagement.FileSystemUtility]::FileExists("PackageWithTextFile.1.0.0.0.deleteme")
 
     } finally {
         $fileStream.Close()
@@ -871,8 +876,8 @@ function Test-FinishFailedUninstallOnSolutionOpenOfProjectLevelPackage
     Open-Solution $solutionDir
 
     # Assert
-    Assert-False $physicalFileSystem.DirectoryExists("PackageWithTextFile.1.0")
-    Assert-False $physicalFileSystem.FileExists("PackageWithTextFile.1.0.deleteme")
+    Assert-False [NuGet.ProjectManagement.FileSystemUtility]::DirectoryExists("PackageWithTextFile.1.0.0.0")
+    Assert-False [NuGet.ProjectManagement.FileSystemUtility]::FileExists("PackageWithTextFile.1.0.0.0.deleteme")
 }
 
 
@@ -903,7 +908,9 @@ function Test-UnInstallPackageWithXdtTransformUnTransformsTheFile
     Assert-AreEqual "true" $content.configuration["system.web"].compilation.debug
     Assert-Null $content.configuration["system.web"].customErrors
 }
-function Test-UninstallPackageHonorPackageReferencesAccordingToProjectFramework
+
+#function Test-UninstallPackageHonorPackageReferencesAccordingToProjectFramework
+function UninstallPackageHonorPackageReferencesAccordingToProjectFramework
 {
     param ($context)
     

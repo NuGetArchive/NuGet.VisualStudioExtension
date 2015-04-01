@@ -134,7 +134,7 @@ function global:Run-Test {
     # If no tests were specified just run all
     if(!$test) {
         # Get all of the the tests functions
-        $tests = Get-ChildItem function:\Test*
+        $tests = Get-ChildItem function:\Test-*
         $tests = Rearrange-Tests $tests
     }
     else {
@@ -162,108 +162,168 @@ function global:Run-Test {
 	$startTime = Get-Date
     try {
         # Run all tests        
-        $testIndex = 0		
+        $testIndex = 0
 
         $tests | %{ 
             $testIndex++
 
+
+            $testObject = $_
             # Trim the Test- prefix
-            $name = $_.Name.Substring(5)
-            
-            "Running Test $name..."
+            $testName = $testObject.Name.Substring(5)
+
+            $testCases = @( $null )
+            $testCasesInfoString = ".`tThere are not multiple test cases. Just the 1 test"
+
+            try {
+                Write-Host 'Getting the test cases factory for ' $testName
+                $testCasesFactory = @(Get-ChildItem "function:\TestCases-$testName")
+                if($testCasesFactory.Count -gt 1)
+                {
+                    throw ("There are multiple test case factories for the test " + $testName)
+                }
+
+                $testCasesInfoString = $null
+                if($testCasesFactory.Count -eq 1)
+                {
+                    $testCases = & $testCasesFactory[0]
+                    $testCasesInfoString = ".`tRunning multiple test cases for test " + $testName + " . Test cases count is " + $testCases.Count
+                }
+            }
+            catch
+            {
+                $testCases = @( $null )
+                $testCasesInfoString = ".`tThere are not multiple test cases. Just the 1 test"
+            }
 
             # Write to log file as we run tests
-            "$(Get-Date -format o) Running Test $name... ($testIndex / $($tests.Count))" >> $testLogFile
-            
-            $repositoryPath = Join-Path $testRepositoryPath $name
+            "$(Get-Date -format o) Running Test $testName... ($testIndex / $($tests.Count))" + $testCasesInfoString >> $testLogFile
+            "Running Test " + $testName + " ($testIndex / $($tests.Count))" + $testCasesInfoString
 
-            $values = @{
-                RepositoryRoot = $testRepositoryPath
-                TestRoot = $repositoryPath
-                RepositoryPath = Join-Path $repositoryPath Packages
-                NuGetExe = $nugetExePath
-            }
-            
-            if (Test-Path $repositoryPath) {            
-                pushd 
-                Set-Location $repositoryPath
-                # Generate any packages that might be in the repository dir
-                Get-ChildItem $repositoryPath\* -Include *.dgml,*.nuspec | %{
-                    & $generatePackagesExePath $_.FullName | Out-Null
-                } 
-                popd
-            }
-            
-            $context = New-Object PSObject -Property $values
+            $testCaseIndex = 0
+            $testCases | %{
 
-            # Some tests are flaky. We give failed tests another chance to succeed.
-            for ($counter = 0; $counter -le 0; $counter++)
-            {
-                if ($counter -eq 1)
+                # set name to test name. If this is a test case, we will add that info to the name
+                $name = $testName
+                
+                $testCaseObject = $_
+                if($testCaseObject)
                 {
-                    Write-Host -ForegroundColor Blue "Reruning failed test one more time...."
+                    $noteProperties = ($testCaseObject.PSObject.Properties | where { $_.MemberType -eq 'NoteProperty' }) | %{ $_.Value }
+                    if($noteProperties)
+                    {
+                        $name += "(" + [system.string]::join("_", $noteProperties) + ")"
+                    }
+                    $testCaseIndex++
+                    "Running Test case $name... ($testCaseIndex / $($testCases.Count))"
+                    # Write to log file as we run tests
+                    "$(Get-Date -format o) Running Test case $name... ($testCaseIndex / $($testCases.Count))" >> $testLogFile
                 }
+                
+                $repositoryPath = Join-Path $testRepositoryPath $name
 
-                try {
-                    $executionTime = measure-command { & $_ $context }
+                $values = @{
+                    RepositoryRoot = $testRepositoryPath
+                    TestRoot = $repositoryPath
+                    RepositoryPath = Join-Path $repositoryPath Packages
+                    NuGetExe = $nugetExePath
+                }
                 
-                    Write-Host -ForegroundColor DarkGreen "Test $name Passed"
+                $generatePackagesExitCode = 0
+                if (Test-Path $repositoryPath) {            
+                    pushd 
+                    Set-Location $repositoryPath
+                    # Generate any packages that might be in the repository dir
+                    Get-ChildItem $repositoryPath\* -Include *.dgml,*.nuspec | %{
+                        Write-Host 'Running GenerateTestPackages.exe on ' $_.FullName '...'
+                        $p = Start-Process $generatePackagesExePath -wait -NoNewWindow -PassThru -ArgumentList $_.FullName
+                        if($p.ExitCode -ne 0)
+                        {
+                            $generatePackagesExitCode = $p.ExitCode
+                            Write-Host -ForegroundColor Red 'GenerateTestPackages.exe failed. Exit code is ' + $generatePackagesExitCode
+                        }
+                        else {
+                            Write-Host 'GenerateTestPackages.exe on ' $_.FullName ' succeeded'
+                        }
+                    } 
+                    popd
+                }
                 
-                    $results[$name] = New-Object PSObject -Property @{ 
-                        Test = $name
-                        Error = $null
+                $context = New-Object PSObject -Property $values
+
+                # Some tests are flaky. We give failed tests another chance to succeed.
+                for ($counter = 0; $counter -le 1; $counter++)
+                {
+                    if ($counter -eq 1)
+                    {
+                        Write-Host -ForegroundColor Blue "Reruning failed test one more time...."
                     }
 
-                    $testSucceeded = $true
-                }
-                catch {                     
-                    if($_.Exception.Message.StartsWith("SKIP")) {
-                        $message = $_.Exception.Message.Substring(5).Trim()
+                    try {
+                        if($generatePackagesExitCode -ne 0)
+                        {
+                            throw 'GenerateTestPackages.exe failed. Exit code is ' + $generatePackagesExitCode
+                        }
+                        $executionTime = measure-command { & $testObject $context $testCaseObject }
+                    
+                        Write-Host -ForegroundColor DarkGreen "Test $name Passed"
+                    
                         $results[$name] = New-Object PSObject -Property @{ 
                             Test = $name
-                            Error = $message
-                            Skipped = $true
+                            Error = $null
                         }
 
-                        Write-Warning "$name was Skipped: $message"
                         $testSucceeded = $true
                     }
-                    else {                    
-                        $results[$name] = New-Object PSObject -Property @{ 
-                            Test = $name
-                            Error = $_
-                        }
-                        Write-Host -ForegroundColor Red "$($_.InvocationInfo.InvocationName) Failed: $_"
-                        $testSucceeded = $false
-                    }
-                }
-                finally {
-                    try {           
-                        # Clear the cache after running each test
-                        [NuGet.MachineCache]::Default.Clear()
-                    }
                     catch {
-                        # The type might not be loaded so don't fail if it isn't
-                    }
+                        if($_.Exception.Message.StartsWith("SKIP")) {
+                            $message = $_.Exception.Message.Substring(5).Trim()
+                            $results[$name] = New-Object PSObject -Property @{ 
+                                Test = $name
+                                Error = $message
+                                Skipped = $true
+                            }
 
-                    if ($tests.Count -gt 1 -or (!$testSucceeded -and $counter -eq 0)) {
-                        $dte.Solution.Close()
-                    }
-
-                    if ($testSucceeded -or $counter -eq 1) {
-                        if (Test-Path $repositoryPath) {
-                            # Cleanup the output from running the generate packages tool
-                            Remove-Item (Join-Path $repositoryPath Packages) -Force -Recurse -ErrorAction SilentlyContinue
-                            Remove-Item (Join-Path $repositoryPath Assemblies) -Force -Recurse -ErrorAction SilentlyContinue
+                            Write-Warning "$name was Skipped: $message"
+                            $testSucceeded = $true
+                        }
+                        else {
+                            $results[$name] = New-Object PSObject -Property @{ 
+                                Test = $name
+                                Error = $_
+                            }
+                            Write-Host -ForegroundColor Red "$($testObject.InvocationInfo.InvocationName) Failed: $testObject. Exception message: $_"
+                            $testSucceeded = $false
                         }
                     }
-                }
+                    finally {
+                        try {           
+                            # Clear the cache after running each test
+                            [NuGet.MachineCache]::Default.Clear()
+                        }
+                        catch {
+                            # The type might not be loaded so don't fail if it isn't
+                        }
 
-                $results[$name] | Add-Member NoteProperty -Name Time -Value $executionTime
-                $results[$name] | Add-Member NoteProperty -Name Retried -Value ($counter -eq 1)
+                        if ($tests.Count -gt 1 -or (!$testSucceeded -and $counter -eq 0)) {
+                            $dte.Solution.Close()
+                        }
 
-                if ($testSucceeded) {
-                    break;
+                        if ($testSucceeded -or $counter -eq 1) {
+                            if (Test-Path $repositoryPath) {
+                                # Cleanup the output from running the generate packages tool
+                                Remove-Item (Join-Path $repositoryPath Packages) -Force -Recurse -ErrorAction SilentlyContinue
+                                Remove-Item (Join-Path $repositoryPath Assemblies) -Force -Recurse -ErrorAction SilentlyContinue
+                            }
+                        }
+                    }
+
+                    $results[$name] | Add-Member NoteProperty -Name Time -Value $executionTime
+                    $results[$name] | Add-Member NoteProperty -Name Retried -Value ($counter -eq 1)
+
+                    if ($testSucceeded) {
+                        break;
+                    }
                 }
             }
         }
@@ -279,7 +339,7 @@ function global:Run-Test {
         # Set focus back to powershell
         $window.SetFocus()
                
-        Write-TestResults $testRunId $results.Values $testRunOutputPath $LaunchResultsOnFailure
+        Write-TestResults $testRunId $results.Values $testRunOutputPath $testLogFile $LaunchResultsOnFailure
 
         try
         {
@@ -295,6 +355,7 @@ function Write-TestResults {
         $TestRunId,
         $Results,
         $ResultsDirectory,
+        $testLogFile,
         $LaunchResultsOnFailure
     )
 
@@ -323,7 +384,9 @@ function Write-TestResults {
         }
     }
 
-    Write-Host "Ran $($Results.Count) Tests, $pass Passed, $fail Failed, $skipped Skipped. See '$HtmlResultPath' or '$TextResultPath' for more details."
+    $resultMessage = "Ran $($Results.Count) Tests and/or Test cases, $pass Passed, $fail Failed, $skipped Skipped. See '$HtmlResultPath' or '$TextResultPath' for more details."
+    Write-Host $resultMessage
+    "$(Get-Date -format o) $resultMessage" >> $testLogFile
 
     if (($fail -gt 0) -and $LaunchResultsOnFailure -and ($Results.Count -gt 1)) 
     {

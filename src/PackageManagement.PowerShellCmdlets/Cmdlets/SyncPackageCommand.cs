@@ -1,12 +1,12 @@
-﻿using NuGet.PackagingCore;
-using NuGet.ProjectManagement;
-using NuGet.Versioning;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
+using NuGet.Packaging.Core;
+using NuGet.ProjectManagement;
+using NuGet.Versioning;
 
 namespace NuGet.PackageManagement.PowerShellCmdlets
 {
@@ -17,13 +17,14 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
     public class SyncPackageCommand : PackageActionBaseCommand
     {
         private ResolutionContext _context;
+        private bool _allowPrerelease;
 
         public SyncPackageCommand()
             : base()
         {
         }
 
-        public List<NuGetProject> Projects;
+        private List<NuGetProject> Projects = new List<NuGetProject>();
 
         protected override void Preprocess()
         {
@@ -40,18 +41,24 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
         protected override void ProcessRecordCore()
         {
-            base.ProcessRecordCore();
+            Preprocess();
 
             PackageIdentity identity = GetPackageIdentity().Result;
+
             SubscribeToProgressEvents();
-            if (identity == null)
+            if (Projects.Count == 0)
+            {
+                LogCore(MessageLevel.Info, string.Format(Resources.Cmdlets_NoProjectsToSyncPackage, Id));
+            }
+            else if (identity == null)
             {
                 LogCore(MessageLevel.Info, string.Format(Resources.Cmdlet_PackageNotInstalled, Id));
             }
             else
             {
+                _allowPrerelease = IncludePrerelease.IsPresent || identity.Version.IsPrerelease;
                 Task.Run(() => SyncPackages(Projects, identity));
-                WaitAndLogFromMessageQueue();
+                WaitAndLogPackageActions();
             }
             UnsubscribeFromProgressEvents();
         }
@@ -76,7 +83,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             }
             finally
             {
-                completeEvent.Set();
+                blockingCollection.Add(new ExecutionCompleteMessage());
             }
         }
 
@@ -108,7 +115,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         {
             get
             {
-                _context = new ResolutionContext(GetDependencyBehavior(), IncludePrerelease.IsPresent, false);
+                _context = new ResolutionContext(GetDependencyBehavior(), _allowPrerelease, false);
                 return _context;
             }
         }
