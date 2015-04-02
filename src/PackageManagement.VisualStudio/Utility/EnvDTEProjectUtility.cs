@@ -450,12 +450,12 @@ namespace NuGet.PackageManagement.VisualStudio
                 //if the framework is .net core 4.5.1 return windows 8.1
                 if (framework.Framework.Equals(FrameworkConstants.FrameworkIdentifiers.NetCore) && framework.Version.Equals(System.Version.Parse("4.5.1.0"))) 
                 {
-                    return new NuGetFramework(FrameworkConstants.FrameworkIdentifiers.Windows, System.Version.Parse("8.1"), framework.Profile, framework.Platform, framework.PlatformVersion);
+                    return new NuGetFramework(FrameworkConstants.FrameworkIdentifiers.Windows, System.Version.Parse("8.1"), framework.Profile, framework.PlatformIdentifier, framework.PlatformVersion);
                 }
                 //if the framework is .net core 4.5 return 8.0
                 if (framework.Framework.Equals(FrameworkConstants.FrameworkIdentifiers.NetCore) && framework.Version.Equals(System.Version.Parse("4.5.0.0")))
                 {
-                    return new NuGetFramework(FrameworkConstants.FrameworkIdentifiers.Windows, System.Version.Parse("8.0"), framework.Profile, framework.Platform, framework.PlatformVersion);
+                    return new NuGetFramework(FrameworkConstants.FrameworkIdentifiers.Windows, System.Version.Parse("8.0"), framework.Profile, framework.PlatformIdentifier, framework.PlatformVersion);
                 }
                 return NuGetFramework.Parse(targetFrameworkMoniker);
             }
@@ -496,6 +496,8 @@ namespace NuGet.PackageManagement.VisualStudio
             }
 
             string targetFramework = GetPropertyValue<string>(envDTEProject, "TargetFrameworkMoniker");
+
+            string targetPlatformIdentifier = GetPropertyValue<string>(envDTEProject, "TargetPlatformIdentifier");
 
             // XNA project lies about its true identity, reporting itself as a normal .NET 4.0 project.
             // We detect it and changes its target framework to Silverlight4-WindowsPhone71
@@ -1022,6 +1024,11 @@ namespace NuGet.PackageManagement.VisualStudio
         public static bool IsWixProject(EnvDTEProject envDTEProject)
         {
             return envDTEProject.Kind != null && envDTEProject.Kind.Equals(NuGetVSConstants.WixProjectTypeGuid, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static bool IsUniversalAppPlatformProject(EnvDTEProject envDTEProject)
+        {
+            return envDTEProject != null && NuGetVSConstants.JsProjectTypeGuid.Equals(envDTEProject.Kind, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
