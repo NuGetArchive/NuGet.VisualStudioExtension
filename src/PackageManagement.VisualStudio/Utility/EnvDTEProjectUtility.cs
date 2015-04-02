@@ -446,18 +446,23 @@ namespace NuGet.PackageManagement.VisualStudio
             string targetFrameworkMoniker = GetTargetFrameworkString(envDTEProject);
             if (targetFrameworkMoniker != null)
             {
-                var framework = NuGetFramework.Parse(targetFrameworkMoniker);
-                //if the framework is .net core 4.5.1 return windows 8.1
-                if (framework.Framework.Equals(FrameworkConstants.FrameworkIdentifiers.NetCore) && framework.Version.Equals(System.Version.Parse("4.5.1.0"))) 
+                NuGetFramework framework = NuGetFramework.Parse(targetFrameworkMoniker);
+
+                if (StringComparer.OrdinalIgnoreCase.Equals(framework.Framework, FrameworkConstants.FrameworkIdentifiers.NetCore))
                 {
-                    return new NuGetFramework(FrameworkConstants.FrameworkIdentifiers.Windows, System.Version.Parse("8.1"), framework.Profile, framework.PlatformIdentifier, framework.PlatformVersion);
+                    //if the framework is .net core 4.5.1 return windows 8.1
+                    if (framework.Version.Equals(new Version(4, 5, 1, 0)))
+                    {
+                        framework = FrameworkConstants.CommonFrameworks.Win81;
+                    }
+                    //if the framework is .net core 4.5 return 8.0
+                    else if (framework.Version.Equals(new Version(4, 5, 0, 0)))
+                    {
+                        framework = FrameworkConstants.CommonFrameworks.Win8;
+                    }
                 }
-                //if the framework is .net core 4.5 return 8.0
-                if (framework.Framework.Equals(FrameworkConstants.FrameworkIdentifiers.NetCore) && framework.Version.Equals(System.Version.Parse("4.5.0.0")))
-                {
-                    return new NuGetFramework(FrameworkConstants.FrameworkIdentifiers.Windows, System.Version.Parse("8.0"), framework.Profile, framework.PlatformIdentifier, framework.PlatformVersion);
-                }
-                return NuGetFramework.Parse(targetFrameworkMoniker);
+
+                return framework;
             }
 
             return NuGetFramework.UnsupportedFramework;
@@ -1024,11 +1029,6 @@ namespace NuGet.PackageManagement.VisualStudio
         public static bool IsWixProject(EnvDTEProject envDTEProject)
         {
             return envDTEProject.Kind != null && envDTEProject.Kind.Equals(NuGetVSConstants.WixProjectTypeGuid, StringComparison.OrdinalIgnoreCase);
-        }
-
-        public static bool IsUniversalAppPlatformProject(EnvDTEProject envDTEProject)
-        {
-            return envDTEProject != null && NuGetVSConstants.JsProjectTypeGuid.Equals(envDTEProject.Kind, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
