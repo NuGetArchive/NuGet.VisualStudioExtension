@@ -443,29 +443,43 @@ namespace NuGet.PackageManagement.VisualStudio
 
         public static NuGetFramework GetTargetNuGetFramework(EnvDTEProject envDTEProject)
         {
+            NuGetFramework framework = NuGetFramework.UnsupportedFramework;
+
             string targetFrameworkMoniker = GetTargetFrameworkString(envDTEProject);
             if (targetFrameworkMoniker != null)
             {
-                NuGetFramework framework = NuGetFramework.Parse(targetFrameworkMoniker);
+                // check for UAP first since this is in addition to a normal TFM
+                string uapTargetPlatformVersion = GetPropertyValue<string>(envDTEProject, "UAP.TargetPlatformVersion");
 
-                if (StringComparer.OrdinalIgnoreCase.Equals(framework.Framework, FrameworkConstants.FrameworkIdentifiers.NetCore))
+                Version UAPVersion = null;
+                if (!String.IsNullOrEmpty(uapTargetPlatformVersion) && Version.TryParse(uapTargetPlatformVersion, out UAPVersion))
                 {
-                    //if the framework is .net core 4.5.1 return windows 8.1
-                    if (framework.Version.Equals(new Version(4, 5, 1, 0)))
+                    framework = new NuGetFramework(FrameworkConstants.FrameworkIdentifiers.UAP, UAPVersion);
+                }
+                else
+                {
+                    // Parse the framework as is
+                    framework = NuGetFramework.Parse(targetFrameworkMoniker);
+
+                    if (StringComparer.OrdinalIgnoreCase.Equals(framework.Framework, FrameworkConstants.FrameworkIdentifiers.NetCore))
                     {
-                        framework = FrameworkConstants.CommonFrameworks.Win81;
-                    }
-                    //if the framework is .net core 4.5 return 8.0
-                    else if (framework.Version.Equals(new Version(4, 5, 0, 0)))
-                    {
-                        framework = FrameworkConstants.CommonFrameworks.Win8;
+                        // Parse frameworks using NetCore
+
+                        //if the framework is .net core 4.5.1 return windows 8.1
+                        if (framework.Version.Equals(new Version(4, 5, 1, 0)))
+                        {
+                            framework = FrameworkConstants.CommonFrameworks.Win81;
+                        }
+                        //if the framework is .net core 4.5 return 8.0
+                        else if (framework.Version.Equals(new Version(4, 5, 0, 0)))
+                        {
+                            framework = FrameworkConstants.CommonFrameworks.Win8;
+                        }
                     }
                 }
-
-                return framework;
             }
 
-            return NuGetFramework.UnsupportedFramework;
+            return framework;
         }
 
         private static string GetTargetFrameworkString(EnvDTEProject envDTEProject)
