@@ -259,7 +259,7 @@ namespace NuGetVSExtension
             AddMenuCommandHandlers();
 
             // IMPORTANT: Do NOT do anything that can lead to a call to ServiceLocator.GetGlobalService().
-            // Doing so is illegal and may cause VS to hang.
+            // Doing so is illegal and may cause VS to stop responding.
 
             _dte = (DTE)GetService(typeof(SDTE));
             Debug.Assert(_dte != null);
