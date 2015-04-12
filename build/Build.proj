@@ -151,7 +151,7 @@
         <PropertyGroup>
             <EnableCodeAnalysis Condition="'$(EnableCodeAnalysis)' == ''" >true</EnableCodeAnalysis>
         </PropertyGroup>
-        <MSBuild Projects="$(NuGetRoot)\NuGet.sln" Targets="Build" Properties="EnableCodeAnalysis=$(EnableCodeAnalysis);DeployExtension=false" />
+        <MSBuild Projects="$(NuGetRoot)\NuGet.VisualStudioExtension.sln" Targets="Build" Properties="EnableCodeAnalysis=$(EnableCodeAnalysis);DeployExtension=false" />
     </Target>
 
     <Target Name="BuildMono">
