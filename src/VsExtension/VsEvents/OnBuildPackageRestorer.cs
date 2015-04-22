@@ -156,22 +156,21 @@ namespace NuGetVSExtension
 
                         process.ErrorDataReceived += (o, e) =>
                         {
-                            ThreadHelper.JoinableTaskFactory.RunAsync(async delegate
+                            if (e.Data != null)
                             {
-                                // Switch to main thread to update the error list window or output window
-                                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                                string error = String.Format(CultureInfo.InvariantCulture, "DNU Error: {0}", 
-                                    e.Data == null ? "check output window for details" : null);
-
-                                if (e.Data != null)
+                                ThreadHelper.JoinableTaskFactory.RunAsync(async delegate
                                 {
-                                    WriteLine(VerbosityLevel.Quiet, "{0}", error);
-                                }
+                                    // Switch to main thread to update the error list window or output window
+                                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                                ShowError(_errorListProvider, TaskErrorCategory.Error,
-                                    TaskPriority.High, error, hierarchyItem: null);
-                            });
+                                    string error = String.Format(CultureInfo.InvariantCulture, "DNU Error: {0}", e.Data);
+
+                                    if (e.Data != null)
+                                    {
+                                        WriteLine(VerbosityLevel.Quiet, "{0}", error);
+                                    }
+                                });
+                            }
                         };
 
                         process.OutputDataReceived += (o, e) =>
@@ -190,6 +189,18 @@ namespace NuGetVSExtension
                             process.BeginOutputReadLine();
                             process.BeginErrorReadLine();
                             process.WaitForExit();
+
+                            if (process.ExitCode != 0)
+                            {
+                                ThreadHelper.JoinableTaskFactory.RunAsync(async delegate
+                                {
+                                    // Switch to main thread to update the error list window or output window
+                                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                                    ShowError(_errorListProvider, TaskErrorCategory.Error,
+                                        TaskPriority.High, "DNU completed with errors. Check the build output window for details.", hierarchyItem: null);
+                                });
+                            }
                         });
                     }
                 }
