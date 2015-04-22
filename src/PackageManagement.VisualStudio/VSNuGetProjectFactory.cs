@@ -30,6 +30,7 @@ namespace NuGet.PackageManagement.VisualStudio
         public NuGetProject CreateNuGetProject(EnvDTEProject envDTEProject, INuGetProjectContext nuGetProjectContext = null)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+            NuGetProject result = null;
 
             if (nuGetProjectContext == null)
             {
@@ -39,19 +40,33 @@ namespace NuGet.PackageManagement.VisualStudio
             var projectK = GetProjectKProject(envDTEProject);
             if (projectK != null)
             {
-                return new ProjectKNuGetProject(projectK, envDTEProject.Name, envDTEProject.UniqueName);
+                result = new ProjectKNuGetProject(projectK, envDTEProject.Name, envDTEProject.UniqueName);
+            }
+            else
+            {
+                var msBuildNuGetProjectSystem = MSBuildNuGetProjectSystemFactory.CreateMSBuildNuGetProjectSystem(envDTEProject, nuGetProjectContext);
+
+                // Treat projects with nuget.json as build integrated projects
+                string projectPath = EnvDTEProjectUtility.GetFullPath(envDTEProject);
+                string jsonConfig = Path.Combine(projectPath, NuGetVSConstants.JsonConfigFileName);
+
+                if (File.Exists(jsonConfig))
+                {
+                    result = new BuildIntegratedProjectSystem(jsonConfig, msBuildNuGetProjectSystem, envDTEProject.Name, envDTEProject.UniqueName);
+                }
+                else
+                {
+                    var folderNuGetProjectFullPath = _packagesPath();
+
+                    var packagesConfigFullPath = EnvDTEProjectUtility.GetPackagesConfigFullPath(envDTEProject);
+                    var packagesConfigWithProjectNameFullPath = EnvDTEProjectUtility.GetPackagesConfigWithProjectNameFullPath(envDTEProject);
+
+                    result = new MSBuildNuGetProject(msBuildNuGetProjectSystem, folderNuGetProjectFullPath,
+                        File.Exists(packagesConfigWithProjectNameFullPath) ? packagesConfigWithProjectNameFullPath : packagesConfigFullPath);
+                }
             }
 
-            var msBuildNuGetProjectSystem = MSBuildNuGetProjectSystemFactory.CreateMSBuildNuGetProjectSystem(envDTEProject, nuGetProjectContext);
-            var folderNuGetProjectFullPath = _packagesPath();
-
-            var packagesConfigFullPath = EnvDTEProjectUtility.GetPackagesConfigFullPath(envDTEProject);
-            var packagesConfigWithProjectNameFullPath = EnvDTEProjectUtility.GetPackagesConfigWithProjectNameFullPath(envDTEProject);
-
-            var msBuildNuGetProject = new MSBuildNuGetProject(msBuildNuGetProjectSystem, folderNuGetProjectFullPath,
-                File.Exists(packagesConfigWithProjectNameFullPath) ? packagesConfigWithProjectNameFullPath : packagesConfigFullPath);
-
-            return msBuildNuGetProject;
+            return result;
         }
 
         public static INuGetPackageManager GetProjectKProject(EnvDTEProject project)
