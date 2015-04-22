@@ -19,6 +19,7 @@ using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.ProjectManagement;
 using Task = System.Threading.Tasks.Task;
+using NuGet.ProjectManagement.Projects;
 
 namespace NuGetVSExtension
 {
@@ -149,24 +150,56 @@ namespace NuGetVSExtension
                         startInfo.RedirectStandardError = true;
                         startInfo.RedirectStandardOutput = true;
 
+                        var process = new System.Diagnostics.Process();
+                        process.StartInfo = startInfo;
+                        process.EnableRaisingEvents = true;
+
+                        process.ErrorDataReceived += (o, e) =>
+                        {
+                            ThreadHelper.JoinableTaskFactory.RunAsync(async delegate
+                            {
+                                // Switch to main thread to update the error list window or output window
+                                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                                string error = String.Format(CultureInfo.InvariantCulture, "DNU Error: {0}", 
+                                    e.Data == null ? "check output window for details" : null);
+
+                                if (e.Data != null)
+                                {
+                                    WriteLine(VerbosityLevel.Quiet, "{0}", error);
+                                }
+
+                                ShowError(_errorListProvider, TaskErrorCategory.Error,
+                                    TaskPriority.High, error, hierarchyItem: null);
+                            });
+                        };
+
+                        process.OutputDataReceived += (o, e) =>
+                        {
+                            ThreadHelper.JoinableTaskFactory.RunAsync(async delegate
+                            {
+                                // Switch to main thread to update the error list window or output window
+                                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                                WriteLine(VerbosityLevel.Quiet, "{0}", e.Data);
+                            });
+                        };
+
                         dnuTask = Task.Run(() =>
                         {
-                            var process = System.Diagnostics.Process.Start(startInfo);
+                            process.Start();
+                            process.BeginOutputReadLine();
+                            process.BeginErrorReadLine();
                             process.WaitForExit();
-                            var output = process.StandardOutput.ReadToEnd();
-                            var errors = process.StandardError.ReadToEnd();
-
-                            if (!String.IsNullOrEmpty(errors))
-                            {
-                                throw new InvalidOperationException(errors);
-                            }
                         });
                     }
                 }
 
                 ThreadHelper.JoinableTaskFactory.Run(async delegate
                 {
-                    await RestorePackagesOrCheckForMissingPackagesAsync(solutionDirectory);
+                    if (!SolutionManager.GetNuGetProjects().Any(project => project is INuGetIntegratedProject))
+                    {
+                        await RestorePackagesOrCheckForMissingPackagesAsync(solutionDirectory);
+                    }
 
                     if (dnuTask != null)
                     {
