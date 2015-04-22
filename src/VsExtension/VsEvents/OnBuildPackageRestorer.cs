@@ -128,9 +128,50 @@ namespace NuGetVSExtension
 
                 var solutionDirectory = SolutionManager.SolutionDirectory;
 
+                // Call DNU to restore
+                Task dnuTask = null;
+                if (SolutionManager.GetNuGetProjects().Any(project => project is BuildIntegratedProjectSystem))
+                {
+                    string dnuPath = Environment.GetEnvironmentVariable("DNU_CMD_PATH");
+
+                    if (String.IsNullOrEmpty(dnuPath) || !dnuPath.EndsWith("dnu.cmd"))
+                    {
+                        throw new InvalidOperationException("Set the environment variable DNU_CMD_PATH to dnu.cmd");
+                    }
+                    else
+                    {
+                        ProcessStartInfo startInfo = new ProcessStartInfo();
+                        startInfo.FileName = dnuPath;
+                        startInfo.Arguments = "restore";
+                        startInfo.CreateNoWindow = true;
+                        startInfo.WorkingDirectory = solutionDirectory;
+                        startInfo.UseShellExecute = false;
+                        startInfo.RedirectStandardError = true;
+                        startInfo.RedirectStandardOutput = true;
+
+                        dnuTask = Task.Run(() =>
+                        {
+                            var process = System.Diagnostics.Process.Start(startInfo);
+                            process.WaitForExit();
+                            var output = process.StandardOutput.ReadToEnd();
+                            var errors = process.StandardError.ReadToEnd();
+
+                            if (!String.IsNullOrEmpty(errors))
+                            {
+                                throw new InvalidOperationException(errors);
+                            }
+                        });
+                    }
+                }
+
                 ThreadHelper.JoinableTaskFactory.Run(async delegate
                 {
                     await RestorePackagesOrCheckForMissingPackagesAsync(solutionDirectory);
+
+                    if (dnuTask != null)
+                    {
+                        await dnuTask;
+                    }
                 });
             }
             catch (Exception ex)
@@ -308,6 +349,7 @@ namespace NuGetVSExtension
             CancellationToken token)
         {
             await TaskScheduler.Default;
+
             await PackageRestoreManager.RestoreMissingPackagesAsync(solutionDirectory, missingPackagesInfo, Token);
         }
 

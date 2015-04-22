@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using NuGet.ProjectManagement;
 using EnvDTEProject = EnvDTE.Project;
+using NuGet.ProjectManagement.Projects;
 
 namespace NuGet.PackageManagement.VisualStudio
 {
@@ -38,6 +39,14 @@ namespace NuGet.PackageManagement.VisualStudio
             if (projectK != null)
             {
                 return new ProjectKNuGetProject(projectK, envDTEProject.Name, envDTEProject.UniqueName);
+            }
+
+            // Treat projects with project.json as build integrated projects
+            if (EnvDTEProjectUtility.HasProjectJson(envDTEProject))
+            {
+                FileInfo file = new FileInfo(Path.Combine(EnvDTEProjectUtility.GetFullPath(envDTEProject), "project.json"));
+
+                return new BuildIntegratedProjectSystem(file, envDTEProject.Name, envDTEProject.UniqueName);
             }
 
             var msBuildNuGetProjectSystem = MSBuildNuGetProjectSystemFactory.CreateMSBuildNuGetProjectSystem(envDTEProject, nuGetProjectContext);

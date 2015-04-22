@@ -19,5 +19,9 @@ namespace NuGet.PackageManagement.VisualStudio
             : base(sourceRepositoryProvider, settings, solutionManager)
         {
         }
+
+
+
+
     }
 }
