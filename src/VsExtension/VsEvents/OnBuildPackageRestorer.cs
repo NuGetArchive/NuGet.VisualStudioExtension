@@ -6,6 +6,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Task = System.Threading.Tasks.Task;
+
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio;
@@ -17,8 +19,6 @@ using NuGet.PackageManagement;
 using NuGet.PackageManagement.VisualStudio;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
-using NuGet.ProjectManagement;
-using Task = System.Threading.Tasks.Task;
 using NuGet.ProjectManagement.Projects;
 
 namespace NuGetVSExtension
@@ -129,92 +129,38 @@ namespace NuGetVSExtension
 
                 var solutionDirectory = SolutionManager.SolutionDirectory;
 
-                // Call DNU to restore
-                Task dnuTask = null;
-                if (SolutionManager.GetNuGetProjects().Any(project => project is BuildIntegratedProjectSystem))
+                ThreadHelper.JoinableTaskFactory.Run(async delegate
                 {
-                    string dnuPath = Environment.GetEnvironmentVariable("DNU_CMD_PATH");
+                    var projects = SolutionManager.GetNuGetProjects().ToList();
 
-                    if (String.IsNullOrEmpty(dnuPath) || !dnuPath.EndsWith("dnu.cmd"))
+                    // Check legacy project types for missing packages
+                    if (!projects.Any(project => project is INuGetIntegratedProject))
                     {
-                        throw new InvalidOperationException("Set the environment variable DNU_CMD_PATH to dnu.cmd");
+                        await RestorePackagesOrCheckForMissingPackagesAsync(solutionDirectory);
                     }
-                    else
+
+                    // Call DNU to restore for BuildIntegratedProjectSystem projects
+                    var buildEnabled = projects.Select(project => project as BuildIntegratedProjectSystem)
+                                                            .Where(project => project != null);
+                    if (buildEnabled.Any())
                     {
-                        ProcessStartInfo startInfo = new ProcessStartInfo();
-                        startInfo.FileName = dnuPath;
-                        startInfo.Arguments = "restore";
-                        startInfo.CreateNoWindow = true;
-                        startInfo.WorkingDirectory = solutionDirectory;
-                        startInfo.UseShellExecute = false;
-                        startInfo.RedirectStandardError = true;
-                        startInfo.RedirectStandardOutput = true;
-
-                        var process = new System.Diagnostics.Process();
-                        process.StartInfo = startInfo;
-                        process.EnableRaisingEvents = true;
-
-                        process.ErrorDataReceived += (o, e) =>
-                        {
-                            if (e.Data != null)
-                            {
-                                ThreadHelper.JoinableTaskFactory.RunAsync(async delegate
-                                {
-                                    // Switch to main thread to update the error list window or output window
-                                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                                    string error = String.Format(CultureInfo.InvariantCulture, "DNU Error: {0}", e.Data);
-
-                                    if (e.Data != null)
-                                    {
-                                        WriteLine(VerbosityLevel.Quiet, "{0}", error);
-                                    }
-                                });
-                            }
-                        };
-
-                        process.OutputDataReceived += (o, e) =>
+                        Action<string> logMessage = (message) =>
                         {
                             ThreadHelper.JoinableTaskFactory.RunAsync(async delegate
                             {
                                 // Switch to main thread to update the error list window or output window
                                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                                WriteLine(VerbosityLevel.Quiet, "{0}", e.Data);
+                                WriteLine(VerbosityLevel.Quiet, "{0}", message);
                             });
                         };
 
-                        dnuTask = Task.Run(() =>
+                        var context = new LoggingProjectContext(logMessage);
+
+                        // Restore packages and create the lock file for each project
+                        foreach (var project in buildEnabled)
                         {
-                            process.Start();
-                            process.BeginOutputReadLine();
-                            process.BeginErrorReadLine();
-                            process.WaitForExit();
-
-                            if (process.ExitCode != 0)
-                            {
-                                ThreadHelper.JoinableTaskFactory.RunAsync(async delegate
-                                {
-                                    // Switch to main thread to update the error list window or output window
-                                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                                    ShowError(_errorListProvider, TaskErrorCategory.Error,
-                                        TaskPriority.High, "DNU completed with errors. Check the build output window for details.", hierarchyItem: null);
-                                });
-                            }
-                        });
-                    }
-                }
-
-                ThreadHelper.JoinableTaskFactory.Run(async delegate
-                {
-                    if (!SolutionManager.GetNuGetProjects().Any(project => project is INuGetIntegratedProject))
-                    {
-                        await RestorePackagesOrCheckForMissingPackagesAsync(solutionDirectory);
-                    }
-
-                    if (dnuTask != null)
-                    {
-                        await dnuTask;
+                            await BuildIntegratedRestoreUtility.Restore(project.JsonConfigPath, context, CancellationToken.None);
+                        }
                     }
                 });
             }
