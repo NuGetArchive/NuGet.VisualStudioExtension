@@ -6,7 +6,6 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using NuGet.ProjectManagement;
 using EnvDTEProject = EnvDTE.Project;
-using NuGet.ProjectManagement.Projects;
 
 namespace NuGet.PackageManagement.VisualStudio
 {
@@ -30,6 +29,8 @@ namespace NuGet.PackageManagement.VisualStudio
 
         public NuGetProject CreateNuGetProject(EnvDTEProject envDTEProject, INuGetProjectContext nuGetProjectContext = null)
         {
+            NuGetProject result = null;
+
             if (nuGetProjectContext == null)
             {
                 nuGetProjectContext = EmptyNuGetProjectContext;
@@ -38,29 +39,35 @@ namespace NuGet.PackageManagement.VisualStudio
             var projectK = GetProjectKProject(envDTEProject);
             if (projectK != null)
             {
-                return new ProjectKNuGetProject(projectK, envDTEProject.Name, envDTEProject.UniqueName);
+                result = new ProjectKNuGetProject(projectK, envDTEProject.Name, envDTEProject.UniqueName);
             }
-
-            // Treat projects with project.json as build integrated projects
-            if (EnvDTEProjectUtility.HasProjectJson(envDTEProject))
+            else
             {
-                FileInfo file = new FileInfo(Path.Combine(EnvDTEProjectUtility.GetFullPath(envDTEProject), "project.json"));
+                var msBuildNuGetProjectSystem = MSBuildNuGetProjectSystemFactory.CreateMSBuildNuGetProjectSystem(envDTEProject, nuGetProjectContext);
 
-                return new BuildIntegratedProjectSystem(file, envDTEProject.Name, envDTEProject.UniqueName);
+                // Treat projects with project.json as build integrated projects
+                if (EnvDTEProjectUtility.HasBuildIntegratedConfig(envDTEProject))
+                {
+                    string projectPath = EnvDTEProjectUtility.GetFullPath(envDTEProject);
+                    string jsonConfig = Path.Combine(projectPath, NuGetVSConstants.JsonConfigFileName);
+
+                    result = new BuildIntegratedProjectSystem(jsonConfig, msBuildNuGetProjectSystem, envDTEProject.Name, envDTEProject.UniqueName);
+                }
+                else
+                {
+                    var folderNuGetProjectFullPath = _packagesPath();
+                    var packagesConfigFiles = EnvDTEProjectUtility.GetPackageReferenceFileFullPaths(envDTEProject);
+
+                    // Item1 is path to "packages.<projectName>.config". Item2 is path to "packages.config"
+                    string packagesConfigWithProjectNameFullPath = packagesConfigFiles.Item1;
+                    string packagesConfigFullPath = packagesConfigFiles.Item2;
+
+                    result = new MSBuildNuGetProject(msBuildNuGetProjectSystem, folderNuGetProjectFullPath,
+                        File.Exists(packagesConfigWithProjectNameFullPath) ? packagesConfigWithProjectNameFullPath : packagesConfigFullPath);
+                }
             }
 
-            var msBuildNuGetProjectSystem = MSBuildNuGetProjectSystemFactory.CreateMSBuildNuGetProjectSystem(envDTEProject, nuGetProjectContext);
-            var folderNuGetProjectFullPath = _packagesPath();
-            var packagesConfigFiles = EnvDTEProjectUtility.GetPackageReferenceFileFullPaths(envDTEProject);
-
-            // Item1 is path to "packages.<projectName>.config". Item2 is path to "packages.config"
-            string packagesConfigWithProjectNameFullPath = packagesConfigFiles.Item1;
-            string packagesConfigFullPath = packagesConfigFiles.Item2;
-
-            var msBuildNuGetProject = new MSBuildNuGetProject(msBuildNuGetProjectSystem, folderNuGetProjectFullPath,
-                File.Exists(packagesConfigWithProjectNameFullPath) ? packagesConfigWithProjectNameFullPath : packagesConfigFullPath);
-
-            return msBuildNuGetProject;
+            return result;
         }
 
         public static INuGetPackageManager GetProjectKProject(EnvDTEProject project)

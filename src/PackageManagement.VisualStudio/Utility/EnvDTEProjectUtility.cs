@@ -1037,7 +1037,7 @@ namespace NuGet.PackageManagement.VisualStudio
 
         public static bool IsBuildIntegrated(EnvDTEProject envDTEProject)
         {
-            return (HasProjectJson(envDTEProject) || SupportsINuGetProjectSystem(envDTEProject));
+            return (HasBuildIntegratedConfig(envDTEProject) || SupportsINuGetProjectSystem(envDTEProject));
         }
 
 
@@ -1050,9 +1050,9 @@ namespace NuGet.PackageManagement.VisualStudio
         /// <summary>
         /// True if the project has a project.json file, indicating that it is build integrated
         /// </summary>
-        public static bool HasProjectJson(EnvDTEProject project)
+        public static bool HasBuildIntegratedConfig(EnvDTEProject project)
         {
-            return EnvDTEProjectUtility.ContainsFile(project, "project.json");
+            return EnvDTEProjectUtility.ContainsFile(project, NuGetVSConstants.JsonConfigFileName);
         }
 
         #endregion // Check Project Types
