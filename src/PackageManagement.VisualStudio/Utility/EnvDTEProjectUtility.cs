@@ -120,7 +120,7 @@ namespace NuGet.PackageManagement.VisualStudio
 
             if (!String.IsNullOrEmpty(fullPath))
             {
-                // Some Project System implementations (JS metro app) return the project 
+                // Some Project System implementations (JS Windows Store app) return the project 
                 // file as FullPath. We only need the parent directory
                 if (File.Exists(fullPath))
                 {
@@ -595,7 +595,7 @@ namespace NuGet.PackageManagement.VisualStudio
             }
             else if (createIfNotExists)
             {
-                // The JS Metro project system has a bug whereby calling AddFolder() to an existing folder that
+                // The JS Windows Store project system has a bug whereby calling AddFolder() to an existing folder that
                 // does not belong to the project will throw. To work around that, we have to manually include 
                 // it into our project.
                 if (IsJavaScriptProject(envDTEProject) && Directory.Exists(fullPath))
@@ -677,7 +677,7 @@ namespace NuGet.PackageManagement.VisualStudio
 
         /// <summary>
         /// If we didn't find the project item at the top level, then we look one more level down.
-        /// In VS files can have other nested files like foo.aspx and foo.aspx.cs or web.config and web.debug.config. 
+        /// In VS files can have other nested files like default.aspx and default.aspx.cs or web.config and web.debug.config. 
         /// These are actually top level files in the file system but are represented as nested project items in VS.            
         /// </summary>
         private static bool TryGetNestedFile(EnvDTEProjectItems envDTEProjectItems, string name, out EnvDTEProjectItem envDTEProjectItem)
@@ -689,7 +689,7 @@ namespace NuGet.PackageManagement.VisualStudio
             }
 
             // If it's not one of the known nested files then we're going to look up prefixes backwards
-            // i.e. if we're looking for foo.aspx.cs then we look for foo.aspx then foo.aspx.cs as a nested file
+            // i.e. if we're looking for default.aspx.cs then we look for default.aspx then default.aspx.cs as a nested file
             EnvDTEProjectItem parentEnvDTEProjectItem = GetProjectItem(envDTEProjectItems, parentFileName, FileKinds);
 
             if (parentEnvDTEProjectItem != null)
