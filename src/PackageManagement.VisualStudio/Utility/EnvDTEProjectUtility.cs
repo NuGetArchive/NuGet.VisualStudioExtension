@@ -49,7 +49,8 @@ namespace NuGet.PackageManagement.VisualStudio
             NuGetVSConstants.NomadForVisualStudioProjectTypeGuid,
             NuGetVSConstants.TDSProjectTypeGuid,
             NuGetVSConstants.DxJsProjectTypeGuid,
-            NuGetVSConstants.DeploymentProjectTypeGuid
+            NuGetVSConstants.DeploymentProjectTypeGuid,
+            NuGetVSConstants.CosmosProjectTypeGuid
         };
 
         public const string WebConfig = "web.config";
@@ -85,7 +86,8 @@ namespace NuGet.PackageManagement.VisualStudio
                 NuGetVSConstants.CppProjectTypeGuid,
                 NuGetVSConstants.SynergexProjectTypeGuid,
                 NuGetVSConstants.NomadForVisualStudioProjectTypeGuid,
-                NuGetVSConstants.DxJsProjectTypeGuid
+                NuGetVSConstants.DxJsProjectTypeGuid,
+                NuGetVSConstants.CosmosProjectTypeGuid
             };
 
         private static readonly char[] PathSeparatorChars = new[] { Path.DirectorySeparatorChar };
