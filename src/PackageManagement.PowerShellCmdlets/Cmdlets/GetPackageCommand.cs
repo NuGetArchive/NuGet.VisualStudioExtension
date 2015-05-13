@@ -250,12 +250,14 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             {
                 versionType = VersionType.updates;
             }
+
             WritePackages(packagesToDisplay, versionType, project);
         }
 
         private void WritePackages(IEnumerable<PSSearchMetadata> packages, VersionType versionType)
         {
             var view = PowerShellRemotePackage.GetPowerShellPackageView(packages, versionType);
+
             if (view.Any())
             {
                 WriteObject(view, enumerateCollection: true);
@@ -271,12 +273,11 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             List<PowerShellUpdatePackage> view = new List<PowerShellUpdatePackage>();
             foreach (KeyValuePair<PSSearchMetadata, NuGetVersion> pair in remoteUpdates)
             {
-                PowerShellUpdatePackage package = PowerShellUpdatePackage.GetPowerShellPackageUpdateView(pair.Key, pair.Value, versionType, project);
-                if (package.Versions != null
-                    && package.Versions.Any())
-                {
-                    view.Add(package);
-                }
+                PowerShellUpdatePackage package =
+                    PowerShellUpdatePackage.GetPowerShellPackageUpdateView(pair.Key, pair.Value, versionType, project);
+
+                // Question for CR - Is it ok just to add the package since it must have a version?
+                view.Add(package);
             }
 
             if (view.Any())

@@ -22,8 +22,6 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         /// <summary>
         /// Parse the NuGetVersion from string
         /// </summary>
-        /// <param name="version"></param>
-        /// <returns></returns>
         public static NuGetVersion GetNuGetVersionFromString(string version)
         {
             NuGetVersion nVersion;
@@ -44,8 +42,6 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         /// <summary>
         /// Get project's target frameworks
         /// </summary>
-        /// <param name="project"></param>
-        /// <returns></returns>
         public static IEnumerable<string> GetProjectTargetFrameworks(NuGetProject project)
         {
             List<string> frameworks = new List<string>();
@@ -61,11 +57,6 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         /// <summary>
         /// Get all versions for a specific package Id.
         /// </summary>
-        /// <param name="sourceRepository"></param>
-        /// <param name="packageId"></param>
-        /// <param name="project"></param>
-        /// <param name="includePrerelease"></param>
-        /// <returns></returns>
         public static IEnumerable<NuGetVersion> GetAllVersionsForPackageId(SourceRepository sourceRepository, string packageId, NuGetProject project, bool includePrerelease)
         {
             IEnumerable<string> targetFrameworks = GetProjectTargetFrameworks(project);
@@ -83,7 +74,8 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                 result = task.Result
                     .Where(p => string.Equals(p.Identity.Id, packageId, StringComparison.OrdinalIgnoreCase))
                     .FirstOrDefault();
-                allVersions = result.Versions;
+
+                allVersions = result.Versions.Value.Result;
             }
             catch (Exception)
             {
@@ -91,11 +83,12 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                     || !allVersions.Any())
                 {
                     throw new InvalidOperationException(
-                        String.Format(CultureInfo.CurrentCulture,
+                        string.Format(CultureInfo.CurrentCulture,
                             Resources.UnknownPackage, packageId));
                 }
             }
-            return result.Versions;
+
+            return allVersions;
         }
 
         /// <summary>
