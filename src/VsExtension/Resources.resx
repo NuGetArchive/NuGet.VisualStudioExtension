@@ -192,4 +192,7 @@ To prevent NuGet from restoring packages during build, open the Visual Studio Op
   <data name="RestoringPackages" xml:space="preserve">
     <value>Restoring NuGet packages...</value>
   </data>
+  <data name="SolutionIsNotSaved" xml:space="preserve">
+    <value>Solution is not saved. Please ensure you have a saved solution</value>
+  </data>
 </root>

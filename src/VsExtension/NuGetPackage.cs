@@ -70,6 +70,7 @@ namespace NuGetVSExtension
 
         private static readonly string[] _visualizerSupportedSKUs = { "Premium", "Ultimate" };
 
+        private uint _solutionExistsContextCookie;
         private uint _solutionNotBuildingAndNotDebuggingContextCookie;
         private DTE _dte;
         private DTEEvents _dteEvents;
@@ -118,6 +119,10 @@ namespace NuGetVSExtension
                     // get the solution not building and not debugging cookie
                     Guid guid = VSConstants.UICONTEXT.SolutionExistsAndNotBuildingAndNotDebugging_guid;
                     _vsMonitorSelection.GetCmdUIContextCookie(ref guid, out _solutionNotBuildingAndNotDebuggingContextCookie);
+
+                    // get the solution exists cookie
+                    guid = VSConstants.UICONTEXT.SolutionExists_guid;
+                    _vsMonitorSelection.GetCmdUIContextCookie(ref guid, out _solutionExistsContextCookie);
                 }
                 return _vsMonitorSelection;
             }
@@ -566,6 +571,11 @@ namespace NuGetVSExtension
             var solutionManager = ServiceLocator.GetInstance<ISolutionManager>();
             var nugetProject = solutionManager.GetNuGetProject(project.Name);
 
+            if(nugetProject == null)
+            {
+                throw new InvalidOperationException(Resources.SolutionIsNotSaved);
+            }
+
             // load packages.config. This makes sure that an exception will get thrown if there
             // are problems with packages.config, such as duplicate packages. When an exception
             // is thrown, an error dialog will pop up and this doc window will not be created.
@@ -868,7 +878,8 @@ namespace NuGetVSExtension
                 // This is actually true. All the menu commands under the 'Project Menu' do go away when no solution is open.
                 // If 'Manage NuGet Packages' is disabled but visible, 'Project' menu shows up just because 1 menu command is visible, even though, it is disabled
                 // So, make it invisible when no solution is open
-                command.Visible = SolutionManager.IsSolutionOpen;
+                // Don't use SolutionManager.IsSolutionOpen for this, because, it will be false, when a solution is open, but not saved
+                command.Visible = DoesSolutionExist();
 
                 // Enable the 'Manage NuGet Packages' dialog menu
                 // a) if the console is NOT busy executing a command, AND
@@ -892,6 +903,13 @@ namespace NuGetVSExtension
                 // c) if there are no NuGetProjects. This means that there no loaded, supported projects
                 command.Enabled = !ConsoleStatus.IsBusy && IsSolutionExistsAndNotDebuggingAndNotBuilding() && SolutionManager.GetNuGetProjects().Any();
             });
+        }
+
+        private bool DoesSolutionExist()
+        {
+            int pfActive;
+            int result = VsMonitorSelection.IsCmdUIContextActive(_solutionExistsContextCookie, out pfActive);
+            return (result == VSConstants.S_OK && pfActive > 0);
         }
 
         private bool IsSolutionExistsAndNotDebuggingAndNotBuilding()

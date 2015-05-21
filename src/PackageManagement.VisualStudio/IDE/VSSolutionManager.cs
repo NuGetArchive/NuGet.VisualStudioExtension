@@ -160,6 +160,9 @@ namespace NuGet.PackageManagement.VisualStudio
             return _nuGetAndEnvDTEProjectCache.GetEnvDTEProjects();
         }
 
+        /// <summary>
+        /// Checks if a solution is open and is saved as required
+        /// </summary>
         public bool IsSolutionOpen
         {
             get
@@ -465,15 +468,16 @@ namespace NuGet.PackageManagement.VisualStudio
             try
             {
                 // If already initialized, need not be on the UI thread
+                // Note that _initialized is only set to true once per VS instance
                 if (!_initialized)
                 {
-                    _initialized = true;
-
                     ThreadHelper.JoinableTaskFactory.Run(async delegate
                         {
                             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                            if (_dte.Solution.IsOpen)
+
+                            if (IsSolutionOpen)
                             {
+                                _initialized = true;
                                 OnSolutionOpened();
                             }
                         });
