@@ -278,5 +278,14 @@ namespace NuGetVSExtension {
                 return ResourceManager.GetString("RestoringPackages", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Solution is not saved. Please ensure you have a saved solution.
+        /// </summary>
+        internal static string SolutionIsNotSaved {
+            get {
+                return ResourceManager.GetString("SolutionIsNotSaved", resourceCulture);
+            }
+        }
     }
 }
