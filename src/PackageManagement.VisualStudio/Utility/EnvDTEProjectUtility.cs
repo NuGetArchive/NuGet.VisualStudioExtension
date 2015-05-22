@@ -640,7 +640,9 @@ namespace NuGet.PackageManagement.VisualStudio
                 ||
                 string.Equals(envDTEProject.Kind, NuGetVSConstants.FsharpProjectTypeGuid, StringComparison.OrdinalIgnoreCase)
                 ||
-                string.Equals(envDTEProject.Kind, NuGetVSConstants.JsProjectTypeGuid, StringComparison.OrdinalIgnoreCase))
+                string.Equals(envDTEProject.Kind, NuGetVSConstants.JsProjectTypeGuid, StringComparison.OrdinalIgnoreCase)
+                ||
+                string.Equals(envDTEProject.Kind, NuGetVSConstants.CpsProjectTypeGuid, StringComparison.OrdinalIgnoreCase))
             {
                 // For Wix and Nemerle projects, IsDocumentInProject() returns not found
                 // even though the file is in the project. So we use GetProjectItem()
