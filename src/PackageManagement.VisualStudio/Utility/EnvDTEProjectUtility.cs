@@ -658,8 +658,9 @@ namespace NuGet.PackageManagement.VisualStudio
             }
             int pFound;
             uint itemId;
-            int hr = vsProject.IsDocumentInProject(path, out pFound, new VSDOCUMENTPRIORITY[0], out itemId);
-            return ErrorHandler.Succeeded(hr) && pFound == 1;
+            VSDOCUMENTPRIORITY[] priority = new VSDOCUMENTPRIORITY[1];
+            int hr = vsProject.IsDocumentInProject(path, out pFound, priority, out itemId);
+            return ErrorHandler.Succeeded(hr) && pFound == 1 && priority[0] >= VSDOCUMENTPRIORITY.DP_Standard;
         }
 
         // Get the ProjectItems for a folder path
