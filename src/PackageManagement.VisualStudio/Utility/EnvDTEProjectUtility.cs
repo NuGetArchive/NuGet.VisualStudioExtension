@@ -44,7 +44,6 @@ namespace NuGet.PackageManagement.VisualStudio
                 NuGetVSConstants.VbProjectTypeGuid,
                 NuGetVSConstants.CppProjectTypeGuid,
                 NuGetVSConstants.JsProjectTypeGuid,
-                NuGetVSConstants.CpsProjectTypeGuid,
                 NuGetVSConstants.FsharpProjectTypeGuid,
                 NuGetVSConstants.NemerleProjectTypeGuid,
                 NuGetVSConstants.WixProjectTypeGuid,
