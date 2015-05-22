@@ -186,7 +186,23 @@ namespace NuGet.PackageManagement.VisualStudio
                 return true;
             }
 
+            if (IsTypicalCpsProject(envDTEProject))
+            {
+                return true;
+            }
+
             return envDTEProject.Kind != null && SupportedProjectTypes.Contains(envDTEProject.Kind) && !HasUnsupportedProjectCapability(envDTEProject);
+        }
+
+        private static bool IsTypicalCpsProject(EnvDTEProject envDTEProject)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            Debug.Assert(envDTEProject != null);
+
+            var hierarchy = VsHierarchyUtility.ToVsHierarchy(envDTEProject);
+
+            return hierarchy.IsCapabilityMatch("CPS + AssemblyReferences + DeclaredSourceItems + UserSourceItems");
         }
 
         internal static bool IsSolutionFolder(EnvDTEProject envDTEProject)
