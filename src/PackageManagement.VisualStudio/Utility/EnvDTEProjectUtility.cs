@@ -656,11 +656,22 @@ namespace NuGet.PackageManagement.VisualStudio
             {
                 return false;
             }
+
             int pFound;
             uint itemId;
-            VSDOCUMENTPRIORITY[] priority = new VSDOCUMENTPRIORITY[1];
-            int hr = vsProject.IsDocumentInProject(path, out pFound, priority, out itemId);
-            return ErrorHandler.Succeeded(hr) && pFound == 1 && priority[0] >= VSDOCUMENTPRIORITY.DP_Standard;
+
+            if (IsTypicalCpsProject(envDTEProject))
+            {
+                // REVIEW: We want to revisit this after RTM - the code in this if statement sould be applied to every project type.
+                // We're checking for VSDOCUMENTPRIORITY.DP_Standard here to see if the file is included in the project.
+                // Original check (outside of if) did not have this.
+                VSDOCUMENTPRIORITY[] priority = new VSDOCUMENTPRIORITY[1];
+                int hr = vsProject.IsDocumentInProject(path, out pFound, priority, out itemId);
+                return ErrorHandler.Succeeded(hr) && pFound == 1 && priority[0] >= VSDOCUMENTPRIORITY.DP_Standard;
+            }
+
+            int hres = vsProject.IsDocumentInProject(path, out pFound, new VSDOCUMENTPRIORITY[0], out itemId);
+            return ErrorHandler.Succeeded(hres) && pFound == 1;
         }
 
         // Get the ProjectItems for a folder path
