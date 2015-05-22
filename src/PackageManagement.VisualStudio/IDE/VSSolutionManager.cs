@@ -32,6 +32,7 @@ namespace NuGet.PackageManagement.VisualStudio
         private readonly NuGetAndEnvDTEProjectCache _nuGetAndEnvDTEProjectCache = new NuGetAndEnvDTEProjectCache();
 
         private bool _initialized;
+        private bool solutionOpenedRaised;
 
         public INuGetProjectContext NuGetProjectContext { get; set; }
 
@@ -267,6 +268,7 @@ namespace NuGet.PackageManagement.VisualStudio
             {
                 SolutionOpened(this, EventArgs.Empty);
             }
+            solutionOpenedRaised = true;
         }
 
         private void OnAfterClosing()
@@ -286,6 +288,7 @@ namespace NuGet.PackageManagement.VisualStudio
             {
                 SolutionClosing(this, EventArgs.Empty);
             }
+            solutionOpenedRaised = false;
         }
 
         private void OnEnvDTEProjectRenamed(EnvDTEProject envDTEProject, string oldName)
@@ -293,7 +296,7 @@ namespace NuGet.PackageManagement.VisualStudio
             // This is a solution event. Should be on the UI thread
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            if (!String.IsNullOrEmpty(oldName) && IsSolutionOpen)
+            if (!String.IsNullOrEmpty(oldName) && IsSolutionOpen && solutionOpenedRaised)
             {
                 EnsureNuGetAndEnvDTEProjectCache();
 
@@ -344,7 +347,8 @@ namespace NuGet.PackageManagement.VisualStudio
 
             if (IsSolutionOpen
                 && EnvDTEProjectUtility.IsSupported(envDTEProject)
-                && !EnvDTEProjectUtility.IsParentProjectExplicitlyUnsupported(envDTEProject))
+                && !EnvDTEProjectUtility.IsParentProjectExplicitlyUnsupported(envDTEProject)
+                && solutionOpenedRaised)
             {
                 EnsureNuGetAndEnvDTEProjectCache();
                 AddEnvDTEProjectToCache(envDTEProject);
