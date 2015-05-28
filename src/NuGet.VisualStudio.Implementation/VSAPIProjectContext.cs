@@ -11,16 +11,13 @@ namespace NuGet.VisualStudio
     internal sealed class VSAPIProjectContext : IMSBuildNuGetProjectContext
     {
         public VSAPIProjectContext()
-            : this(false, false, true)
+            : this(false, false)
         {
         }
 
-        public VSAPIProjectContext(bool skipAssemblyReferences, bool bindingRedirectsDisabled, bool useLegacyInstallPaths = true)
+        public VSAPIProjectContext(bool skipAssemblyReferences, bool bindingRedirectsDisabled)
         {
             PackageExtractionContext = new PackageExtractionContext();
-
-            // many templates depend on legacy paths, for the VS API and template wizard we unfortunately need to keep them
-            PackageExtractionContext.UseLegacyPackageInstallPath = useLegacyInstallPaths;
 
             SourceControlManagerProvider = ServiceLocator.GetInstanceSafe<ISourceControlManagerProvider>();
             SkipAssemblyReferences = skipAssemblyReferences;

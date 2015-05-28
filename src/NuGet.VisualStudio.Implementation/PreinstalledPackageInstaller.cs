@@ -189,7 +189,7 @@ namespace NuGet.VisualStudio
                 if (_packageServices.IsPackageInstalled(project, package.Id))
                 {
                     // If so, is it the right version?
-                    if (!_packageServices.IsPackageInstalledEx(project, package.Id, package.Version.ToNormalizedString()))
+                    if (!_packageServices.IsPackageInstalledEx(project, package.Id, package.Version.ToString()))
                     {
                         // No? Raise a warning (likely written to the Output window) and ignore this package.
                         warningHandler(String.Format(VsResources.PreinstalledPackages_VersionConflict, package.Id, package.Version));
@@ -212,10 +212,7 @@ namespace NuGet.VisualStudio
                         bool disableBindingRedirects = package.SkipAssemblyReferences;
 
                         VSAPIProjectContext projectContext = new VSAPIProjectContext(package.SkipAssemblyReferences, disableBindingRedirects);
-
-                        // Old templates have hardcoded non-normalized paths
-                        projectContext.PackageExtractionContext.UseLegacyPackageInstallPath = true;
-
+                        
                         // This runs from the UI thread
                         await _installer.InstallInternalAsync(project, toInstall, repos, projectContext, package.IgnoreDependencies, CancellationToken.None);
                     }

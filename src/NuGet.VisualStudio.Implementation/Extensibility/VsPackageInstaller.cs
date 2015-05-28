@@ -77,7 +77,7 @@ namespace NuGet.VisualStudio
             List<PackageIdentity> toInstall = new List<PackageIdentity> { new PackageIdentity(packageId, semVer) };
 
             // Normalize the install folder for new installs (this only happens for IVsPackageInstaller2. IVsPackageInstaller keeps legacy behavior)
-            VSAPIProjectContext projectContext = new VSAPIProjectContext(false, false, false);
+            VSAPIProjectContext projectContext = new VSAPIProjectContext(false, false);
 
             await InstallInternalAsync(project, toInstall, sourceProvider, projectContext, ignoreDependencies, token);
         }
