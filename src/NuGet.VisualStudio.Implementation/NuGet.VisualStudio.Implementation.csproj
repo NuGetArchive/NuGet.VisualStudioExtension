@@ -226,6 +226,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>VsResources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Utility\APITest.cs" />
     <Compile Include="Utility\PumpingJTF.cs" />
     <Compile Include="Utility\VsHierarchyHelper.cs" />
     <Compile Include="Utility\VsHierarchyItem.cs" />
