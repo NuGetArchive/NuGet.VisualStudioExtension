@@ -170,3 +170,96 @@ function BuildIntegratedDependencyUpdatedByInstall {
     # DotNetRDF requires json.net 6.0.8
     Assert-ProjectJsonLockFilePackage $project Newtonsoft.Json 7.0.1-beta3
 }
+
+function BuildIntegratedInstallPackageJsonNet701Beta3 {
+    # Arrange
+    $project = New-UAPApplication UAPApp
+
+    # Act
+    Install-Package newtonsoft.json -ProjectName $project.Name -version 7.0.1-beta3
+    
+    # Assert
+    Assert-ProjectJsonLockFileRuntimeAssembly $project "lib/portable-net45+wp80+win8+wpa81+dnxcore50/Newtonsoft.Json.dll"
+}
+
+
+function BuildIntegratedProjectClosure {
+    # Arrange
+    $project1 = New-UAPApplication Project1
+    $project2 = New-UAPApplication Project2
+    $project3 = New-UAPApplication Project3
+
+    Add-ProjectReference $project1 $project2
+    Add-ProjectReference $project2 $project3
+
+    Install-Package NuGet.Versioning -ProjectName $project3.Name -version 1.0.7
+    Remove-ProjectJsonLockFile $project3
+
+    # Act
+    Build-Solution
+    
+    # Assert
+    Assert-ProjectJsonLockFilePackage $project3 NuGet.Versioning 1.0.7
+    Assert-ProjectJsonLockFilePackage $project2 NuGet.Versioning 1.0.7
+    Assert-ProjectJsonLockFilePackage $project1 NuGet.Versioning 1.0.7
+}
+
+function Test-BuildIntegratedInstallNonExistantPackage {
+    
+    # Arrange
+    $project = New-UAPApplication UAPApp
+
+    # Act and Assert
+    Assert-Throws { Install-Package NuGet.Versioning -ProjectName $project.Name -version 988.922.188 } "Package restore failed. Rolling back package changes."
+}
+
+function Test-BuildIntegratedInstallNonExistantPackageId {    
+    # Arrange
+    $project = New-UAPApplication UAPApp
+
+    # Act and Assert
+    Assert-Throws { Install-Package NuGet.NotFound -ProjectName $project.Name -version 988.922.188 } "Package restore failed. Rolling back package changes."
+}
+
+function Test-BuildIntegratedProjectClosureWithLegacyProjects {
+    # Arrange
+    $project1 = New-UAPApplication Project1
+    $project2 = New-WindowsPhoneClassLibrary Project2
+    $project3 = New-WindowsPhoneClassLibrary Project3
+
+    Add-ProjectReference $project1 $project2
+    Add-ProjectReference $project2 $project3
+
+    Install-Package Comparers -ProjectName $project2.Name -version 4.0.0
+
+    # Act
+    Build-Solution
+    
+    # Assert
+    Assert-NotNull Get-ProjectJsonLockFile $project1
+}
+
+# Tests that packages are restored on build
+function Test-BuildIntegratedMixedLegacyProjects {
+    param($context)
+
+    # Arrange
+    $p1 = New-ClassLibrary
+    $p1 | Install-Package Newtonsoft.Json -Version 5.0.6
+
+    $p2 = New-UAPApplication UAPApp
+    $p2 | Install-Package NuGet.Versioning -Version 1.0.7
+
+    # delete the packages folder
+    $packagesDir = Get-PackagesDir
+    RemoveDirectory $packagesDir
+    Assert-False (Test-Path $packagesDir)
+
+    # Act
+    Build-Solution
+
+    # Assert
+    Assert-True (Test-Path $packagesDir)
+    Assert-Package $p1 Newtonsoft.Json
+    Assert-ProjectJsonLockFilePackage $project NuGet.Versioning 1.0.7
+}
