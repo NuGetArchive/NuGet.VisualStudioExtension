@@ -32,6 +32,7 @@ using ISettings = NuGet.Configuration.ISettings;
 using PackageSourceProvider = Legacy::NuGet.PackageSourceProvider;
 using Resx = NuGet.PackageManagement.UI.Resources;
 using Strings = NuGet.PackageManagement.VisualStudio.Strings;
+using NuGet.Configuration;
 
 namespace NuGetVSExtension
 {
@@ -269,6 +270,7 @@ namespace NuGetVSExtension
         {
             base.Initialize();
             Styles.Initialize();
+            SettingsUtility.InitNuGetConfig(MachineWideSettings);
 
             // ***
             // VsNuGetDiagnostics.Initialize(
@@ -320,7 +322,7 @@ namespace NuGetVSExtension
             ProjectRetargetingHandler = new ProjectRetargetingHandler(_dte, SolutionManager, this);
             ProjectUpgradeHandler = new ProjectUpgradeHandler(this, SolutionManager);
 
-            LoadNuGetSettings();
+            LoadNuGetSettings();  
         }
 
         /// <summary>
