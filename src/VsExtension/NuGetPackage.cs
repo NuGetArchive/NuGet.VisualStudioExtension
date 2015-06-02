@@ -480,6 +480,12 @@ namespace NuGetVSExtension
                     && docView is PackageManagerWindowPane)
                 {
                     var packageManagerWindowPane = (PackageManagerWindowPane)docView;
+                    if (packageManagerWindowPane.Model.IsSolution)
+                    {
+                        // the window is the solution package manager
+                        continue;
+                    }
+
                     var projects = packageManagerWindowPane.Model.Context.Projects;
                     if (projects.Count() != 1)
                     {
@@ -578,7 +584,7 @@ namespace NuGetVSExtension
             var uiFactory = ServiceLocator.GetInstance<INuGetUIFactory>();
             var uiController = uiFactory.Create(uiContext, _uiProjectContext);
 
-            var model = new PackageManagerModel(uiController, uiContext);
+            var model = new PackageManagerModel(uiController, uiContext, isSolution: false);
             var vsWindowSearchHostfactory = ServiceLocator.GetGlobalService<SVsWindowSearchHostFactory, IVsWindowSearchHostFactory>();
             var control = new PackageManagerControl(model, Settings, vsWindowSearchHostfactory);
             var windowPane = new PackageManagerWindowPane(control);
@@ -768,7 +774,7 @@ namespace NuGetVSExtension
             var uiController = uiFactory.Create(uiContext, _uiProjectContext);
 
             var solutionName = (string)_dte.Solution.Properties.Item("Name").Value;
-            var model = new PackageManagerModel(uiController, uiContext);
+            var model = new PackageManagerModel(uiController, uiContext, isSolution: true);
             model.SolutionName = solutionName;
             var vsWindowSearchHostfactory = ServiceLocator.GetGlobalService<SVsWindowSearchHostFactory, IVsWindowSearchHostFactory>();
             var control = new PackageManagerControl(model, Settings, vsWindowSearchHostfactory);
