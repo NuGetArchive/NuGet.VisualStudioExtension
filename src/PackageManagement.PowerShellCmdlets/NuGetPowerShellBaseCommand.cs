@@ -14,18 +14,15 @@ using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
 using System.Threading;
 using System.Threading.Tasks;
+using ExecutionContext = NuGet.ProjectManagement.ExecutionContext;
 using EnvDTE;
 using Microsoft.VisualStudio.Threading;
 using NuGet.Configuration;
 using NuGet.PackageManagement.VisualStudio;
 using NuGet.Packaging;
-using NuGet.Packaging.Core;
 using NuGet.ProjectManagement;
 using NuGet.Protocol.Core.Types;
 using NuGet.Protocol.VisualStudio;
-using NuGet.Resolver;
-using NuGet.Versioning;
-using ExecutionContext = NuGet.ProjectManagement.ExecutionContext;
 
 namespace NuGet.PackageManagement.PowerShellCmdlets
 {
@@ -100,6 +97,11 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         /// Active Source Repository for PowerShell Cmdlets
         /// </summary>
         protected SourceRepository ActiveSourceRepository { get; set; }
+
+        /// <summary>
+        /// List of all the enabled source repositories
+        /// </summary>
+        protected List<SourceRepository> EnabledSourceRepositories { get; private set; }
 
         /// <summary>
         /// Settings read from the config files
@@ -257,6 +259,10 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                     // source should be the format of url here; otherwise it cannot resolve from name anyways.
                     ActiveSourceRepository = CreateRepositoryFromSource(source);
                 }
+
+                EnabledSourceRepositories = _resourceRepositoryProvider?.GetRepositories()
+                    .Where(r => r.PackageSource.IsEnabled)
+                    .ToList();
             }
         }
 
@@ -528,32 +534,6 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             }
 
             return packages;
-        }
-
-        /// <summary>
-        /// Get update identity for a package that is installed to a project. Used for Update-Package Id -Version.
-        /// </summary>
-        protected PackageIdentity GetPackageUpdate(PackageReference installedPackage, NuGetProject project,
-            bool includePrerelease, bool isSafe, string version = null, bool isEnum = false, DependencyBehavior dependencyEnum = DependencyBehavior.Lowest)
-        {
-            PackageIdentity identity = null;
-
-            if (isSafe)
-            {
-                identity = PowerShellCmdletsUtility.GetSafeUpdateForPackageIdentity(ActiveSourceRepository, installedPackage.PackageIdentity, project, includePrerelease, installedPackage.PackageIdentity.Version);
-            }
-            else if (isEnum)
-            {
-                identity = PowerShellCmdletsUtility.GetUpdateForPackageByDependencyEnum(ActiveSourceRepository, installedPackage.PackageIdentity, project, dependencyEnum, includePrerelease);
-            }
-            else
-            {
-                NuGetVersion nVersion = PowerShellCmdletsUtility.GetNuGetVersionFromString(version);
-                identity = new PackageIdentity(installedPackage.PackageIdentity.Id, nVersion);
-            }
-
-            // Since package downgrade is allowed, we will not check nVersion > installedPackage.PackageIdentity.Version here.
-            return identity;
         }
 
         /// <summary>
