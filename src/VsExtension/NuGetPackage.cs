@@ -269,6 +269,7 @@ namespace NuGetVSExtension
         {
             base.Initialize();
             Styles.Initialize();
+            Brushes.Initialize();
 
             // ***
             // VsNuGetDiagnostics.Initialize(
@@ -723,7 +724,7 @@ namespace NuGetVSExtension
             {
                 return settings ?? new UserSettings();
             }
-			
+
             return new UserSettings();
         }
 
@@ -969,12 +970,12 @@ namespace NuGetVSExtension
             OptimizedZipPackage.PurgeCache();
         }
 
-        int IVsPersistSolutionOpts.LoadUserOptions(IVsSolutionPersistence pPersistence, uint grfLoadOpts)
+        public int LoadUserOptions(IVsSolutionPersistence pPersistence, uint grfLoadOpts)
         {
             return VSConstants.S_OK;
         }
 
-        int IVsPersistSolutionOpts.ReadUserOptions(IStream pOptionsStream, string pszKey)
+        public int ReadUserOptions(IStream pOptionsStream, string pszKey)
         {
             try
             {
@@ -995,13 +996,13 @@ namespace NuGetVSExtension
             return VSConstants.S_OK;
         }
 
-        int IVsPersistSolutionOpts.SaveUserOptions(IVsSolutionPersistence pPersistence)
+        public int SaveUserOptions(IVsSolutionPersistence pPersistence)
         {
             pPersistence.SavePackageUserOpts(this, "nuget");
             return VSConstants.S_OK;
         }
 
-        int IVsPersistSolutionOpts.WriteUserOptions(IStream pOptionsStream, string pszKey)
+        public int WriteUserOptions(IStream pOptionsStream, string pszKey)
         {
             try
             {
