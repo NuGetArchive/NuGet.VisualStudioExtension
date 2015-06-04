@@ -24,7 +24,6 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
     public class InstallPackageCommand : PackageActionBaseCommand
     {
         private ResolutionContext _context;
-        private UninstallationContext _uninstallcontext;
         private bool _readFromPackagesConfig;
         private bool _readFromDirectPackagePath;
         private NuGetVersion _nugetVersion;
