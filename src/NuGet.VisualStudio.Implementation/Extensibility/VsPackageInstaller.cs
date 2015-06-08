@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using NuGet.Configuration;
 using NuGet.PackageManagement;
+using NuGet.PackageManagement.VisualStudio;
 using NuGet.Packaging.Core;
 using NuGet.ProjectManagement;
 using NuGet.Protocol.Core.Types;
@@ -344,7 +345,7 @@ namespace NuGet.VisualStudio
             await TaskScheduler.Default;
 
             // store expanded node state
-            IDictionary<string, ISet<VsHierarchyItem>> expandedNodes = await VsHierarchyHelper.GetAllExpandedNodesAsync(_solutionManager);
+            IDictionary<string, ISet<VsHierarchyItem>> expandedNodes = await VsHierarchyUtility.GetAllExpandedNodesAsync(_solutionManager);
 
             try
             {
@@ -381,7 +382,7 @@ namespace NuGet.VisualStudio
             finally
             {
                 // collapse nodes
-                await VsHierarchyHelper.CollapseAllNodesAsync(_solutionManager, expandedNodes);
+                await VsHierarchyUtility.CollapseAllNodesAsync(_solutionManager, expandedNodes);
             }
         }
     }
