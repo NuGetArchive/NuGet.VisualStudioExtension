@@ -300,7 +300,7 @@ namespace NuGet.VisualStudio
                 return;
             }
 
-            VSAPIProjectContext context = new VSAPIProjectContext();
+            VSAPIProjectContext context = new VSAPIProjectContext(skipAssemblyReferences: true, bindingRedirectsDisabled: true);
             WebSiteProjectSystem projectSystem = new WebSiteProjectSystem(project, context);
 
             foreach (var packageName in packageNames)
