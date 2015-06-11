@@ -334,7 +334,7 @@ namespace NuGetConsole.Host.PowerShell.Implementation
                         string pathToPackage = packagePathResolver.GetInstalledPath(package);
                         string toolsPath = Path.Combine(pathToPackage, "tools");
                         AddPathToEnvironment(toolsPath);
-                        Runspace.ExecuteScript(toolsPath, PowerShellScripts.Init, package);
+                        Runspace.ExecuteScript(pathToPackage, @"tools\" + PowerShellScripts.Init, package);
                     }
                 }
                 catch (Exception ex)
