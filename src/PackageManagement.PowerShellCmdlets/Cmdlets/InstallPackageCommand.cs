@@ -11,12 +11,12 @@ using System.Management.Automation;
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
+using Microsoft.VisualStudio.Shell;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.ProjectManagement;
-using NuGet.Resolver;
 using NuGet.Versioning;
+using Task = System.Threading.Tasks.Task;
 
 namespace NuGet.PackageManagement.PowerShellCmdlets
 {
@@ -255,13 +255,17 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
                         using (HttpClient client = new HttpClient())
                         {
-                            using (Stream downloadStream = client.GetStreamAsync(Id).Result)
-                            using (var targetPackageStream = new FileStream(downloadPath, FileMode.Create, FileAccess.Write))
+                            ThreadHelper.JoinableTaskFactory.Run(async delegate
                             {
-                                downloadStream.CopyToAsync(targetPackageStream).Wait();
-                            }
+                                using (Stream downloadStream = await client.GetStreamAsync(Id))
+                                {
+                                    using (var targetPackageStream = new FileStream(downloadPath, FileMode.Create, FileAccess.Write))
+                                    {
+                                        await downloadStream.CopyToAsync(targetPackageStream);
+                                    }
+                                }
+                            });
                         }
-                            
                     }
                 }
                 else
