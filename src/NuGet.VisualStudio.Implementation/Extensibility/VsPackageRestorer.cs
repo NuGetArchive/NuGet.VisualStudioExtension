@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.Shell;
 using NuGet.Configuration;
 using NuGet.PackageManagement;
 using NuGet.PackageManagement.VisualStudio;
+using NuGet.ProjectManagement;
 using NuGet.Protocol.Core.Types;
 
 namespace NuGet.VisualStudio
@@ -39,8 +40,11 @@ namespace NuGet.VisualStudio
             try
             {
                 var solutionDirectory = _solutionManager.SolutionDirectory;
+                var nuGetProjectContext = new EmptyNuGetProjectContext();
                 ThreadHelper.JoinableTaskFactory.Run(() =>
-                    _restoreManager.RestoreMissingPackagesInSolutionAsync(solutionDirectory, CancellationToken.None));
+                    _restoreManager.RestoreMissingPackagesInSolutionAsync(solutionDirectory,
+                    nuGetProjectContext,
+                    CancellationToken.None));
             }
             catch (Exception ex)
             {
