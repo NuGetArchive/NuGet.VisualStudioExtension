@@ -529,6 +529,15 @@ namespace NuGet.PackageManagement.PowerShellCmdlets {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Downloading {0} from {1}: {2} ....
+        /// </summary>
+        internal static string DownloadProgressStatus {
+            get {
+                return ResourceManager.GetString("DownloadProgressStatus", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Executing script file &apos;{0}&apos;.
         /// </summary>
         internal static string ExecutingScript {

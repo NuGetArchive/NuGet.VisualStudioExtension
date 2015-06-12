@@ -43,9 +43,6 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         private readonly ISourceRepositoryProvider _resourceRepositoryProvider;
         private readonly ICommonOperations _commonOperations;
 
-        // TODO: Hook up DownloadResource.Progress event
-        private readonly IHttpClientEvents _httpClientEvents;
-
         private ProgressRecordCollection _progressRecordCache;
         private Exception _scriptException;
         private bool _overwriteAll;
@@ -187,7 +184,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             }
             finally
             {
-                UnsubscribeEvents();
+                // no-op
             }
         }
 
@@ -586,52 +583,41 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         protected override void BeginProcessing()
         {
             IsExecuting = true;
-            if (_httpClientEvents != null)
-            {
-                _httpClientEvents.SendingRequest += OnSendingRequest;
-            }
         }
 
         protected override void EndProcessing()
         {
             IsExecuting = false;
-            UnsubscribeEvents();
             base.EndProcessing();
         }
 
-        protected void UnsubscribeEvents()
+        private void OnProgressAvailable(object sender, PackageProgressEventArgs e)
         {
-            if (_httpClientEvents != null)
-            {
-                _httpClientEvents.SendingRequest -= OnSendingRequest;
-            }
+            _blockingCollection.Add(new ProgressMessage(e));
         }
 
-        protected virtual void OnSendingRequest(object sender, WebRequestEventArgs e)
+        private void WriteProgressInternal(PackageProgressEventArgs e)
         {
-            //HttpUtility.SetUserAgent(e.Request, _psCommandsUserAgent.Value);
+            int percentComplete = Convert.ToInt16(e.Complete) * 100;
+            WriteProgress(ProgressActivityIds.DownloadPackageId, 
+                String.Format(CultureInfo.CurrentCulture, Resources.DownloadProgressStatus, e.PackageIdentity, e.PackageSource.Name, percentComplete.ToString("p")),
+                percentComplete);
         }
 
-        private void OnProgressAvailable(object sender, ProgressEventArgs e)
-        {
-            WriteProgress(ProgressActivityIds.DownloadPackageId, e.Operation, e.PercentComplete);
-        }
-
-        protected void SubscribeToProgressEvents()
+        protected async void SubscribeToProgressEvents()
         {
             if (!IsSyncMode
-                && _httpClientEvents != null)
+                && PackageManager != null)
             {
-                _httpClientEvents.ProgressAvailable += OnProgressAvailable;
+                var downloadSource = await ActiveSourceRepository.GetResourceAsync<DownloadResource>(Token);
+                downloadSource.Progress += OnProgressAvailable;
             }
         }
 
-        protected void UnsubscribeFromProgressEvents()
+        protected async void UnsubscribeFromProgressEvents()
         {
-            if (_httpClientEvents != null)
-            {
-                _httpClientEvents.ProgressAvailable -= OnProgressAvailable;
-            }
+            var downloadSource = await ActiveSourceRepository.GetResourceAsync<DownloadResource>(Token);
+            downloadSource.Progress -= OnProgressAvailable;
         }
 
         private ProgressRecordCollection ProgressRecordCache
@@ -901,6 +887,13 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                     if (logMessage != null)
                     {
                         LogCore(logMessage.Level, logMessage.Content);
+                        continue;
+                    }
+
+                    var progressMessage = message as ProgressMessage;
+                    if (progressMessage != null)
+                    {
+                        WriteProgressInternal(progressMessage.ProgressArgs);
                         continue;
                     }
                 }

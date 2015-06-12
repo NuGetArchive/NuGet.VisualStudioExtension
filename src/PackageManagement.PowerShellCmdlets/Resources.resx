@@ -294,4 +294,7 @@
   <data name="Cmdlet_MissingPackages" xml:space="preserve">
     <value>Some NuGet packages are missing from the solution. The packages need to be restored in order to build the dependency graph. Restore the packages before performing any operations.</value>
   </data>
+  <data name="DownloadProgressStatus" xml:space="preserve">
+    <value>Downloading {0} from {1}: {2} ...</value>
+  </data>
 </root>
