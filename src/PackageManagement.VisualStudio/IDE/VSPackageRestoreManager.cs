@@ -23,7 +23,10 @@ namespace NuGet.PackageManagement.VisualStudio
         {
         }
 
-        public VSPackageRestoreManager(ISourceRepositoryProvider sourceRepositoryProvider, ISettings settings, ISolutionManager solutionManager)
+        public VSPackageRestoreManager(
+            ISourceRepositoryProvider sourceRepositoryProvider,
+            ISettings settings,
+            ISolutionManager solutionManager)
             : base(sourceRepositoryProvider, settings, solutionManager)
         {
             SolutionManager = solutionManager;
