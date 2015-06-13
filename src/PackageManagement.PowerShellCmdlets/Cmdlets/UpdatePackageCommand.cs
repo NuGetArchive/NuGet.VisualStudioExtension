@@ -7,6 +7,7 @@ using System.Linq;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
+using NuGet.PackageManagement.VisualStudio;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.ProjectManagement;
@@ -29,6 +30,11 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         private bool _isPackageInstalled;
         private DependencyBehavior _updateVersionEnum;
         private NuGetVersion _nugetVersion;
+
+
+        public UpdatePackageCommand() : base(ServiceLocator.GetInstance<IDeleteOnRestartManager>())
+        {
+        }
 
         [Parameter(Mandatory = true, ValueFromPipelineByPropertyName = true, Position = 0, ParameterSetName = "Project")]
         [Parameter(ValueFromPipelineByPropertyName = true, Position = 0, ParameterSetName = "All")]

@@ -12,6 +12,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using Microsoft.VisualStudio.Shell;
+using NuGet.PackageManagement.VisualStudio;
 using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.ProjectManagement;
@@ -30,6 +31,11 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         private bool _versionSpecifiedPrerelease;
         private bool _allowPrerelease;
         private bool _isHttp;
+
+
+        public InstallPackageCommand() : base(ServiceLocator.GetInstance<IDeleteOnRestartManager>())
+        {
+        }
 
         protected override void Preprocess()
         {

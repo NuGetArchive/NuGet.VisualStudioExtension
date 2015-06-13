@@ -61,6 +61,9 @@ namespace NuGet.PackageManagement.VisualStudio
         public event EventHandler<NuGetProjectEventArgs> NuGetProjectRemoved;
         public event EventHandler<NuGetProjectEventArgs> NuGetProjectRenamed;
 
+      //  [Import]
+        //internal IDeleteOnRestartManager DeleteOnRestartManager { get; set; }
+
         public event EventHandler SolutionClosed;
         public event EventHandler SolutionClosing;
         public event EventHandler SolutionOpened;
@@ -93,6 +96,7 @@ namespace NuGet.PackageManagement.VisualStudio
             _solutionEvents.ProjectAdded += OnEnvDTEProjectAdded;
             _solutionEvents.ProjectRemoved += OnEnvDTEProjectRemoved;
             _solutionEvents.ProjectRenamed += OnEnvDTEProjectRenamed;
+
         }
 
         public NuGetProject GetNuGetProject(string nuGetProjectSafeName)
@@ -226,7 +230,7 @@ namespace NuGet.PackageManagement.VisualStudio
             try
             {
                 // When using a temporary solution, (such as by saying File -> New File), querying this value throws.
-                // Since we wouldn't be able to do manage any packages at this point, we return null. Consumers of this property typically 
+                // Since we wouldn't be able to do manage any packages at this point, we return null. Consumers of this property typically
                 // use a String.IsNullOrEmpty check either way, so it's alright.
                 solutionFilePath = (string)property.Value;
             }
@@ -328,7 +332,7 @@ namespace NuGet.PackageManagement.VisualStudio
                 }
                 else if (EnvDTEProjectUtility.IsSolutionFolder(envDTEProject))
                 {
-                    // In the case where a solution directory was changed, project FullNames are unchanged. 
+                    // In the case where a solution directory was changed, project FullNames are unchanged.
                     // We only need to invalidate the projects under the current tree so as to sync the CustomUniqueNames.
                     foreach (var item in EnvDTEProjectUtility.GetSupportedChildProjects(envDTEProject))
                     {
@@ -466,7 +470,7 @@ namespace NuGet.PackageManagement.VisualStudio
                 DefaultNuGetProjectName = null;
             }
 
-            // for LightSwitch project, the main project is not added to _projectCache, but it is called on removal. 
+            // for LightSwitch project, the main project is not added to _projectCache, but it is called on removal.
             // in that case, projectName is null.
             if (envDTEProjectName != null
                 && envDTEProjectName.CustomUniqueName.Equals(DefaultNuGetProjectName, StringComparison.OrdinalIgnoreCase)
@@ -550,7 +554,7 @@ namespace NuGet.PackageManagement.VisualStudio
         {
             // Get all of the projects in the solution and build the reverse graph. i.e.
             // if A has a project reference to B (A -> B) the this will return B -> A
-            // We need to run this on the ui thread so that it doesn't freeze for websites. Since there might be a 
+            // We need to run this on the ui thread so that it doesn't freeze for websites. Since there might be a
             // large number of references.
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -598,10 +602,11 @@ namespace NuGet.PackageManagement.VisualStudio
             {
                 ThreadHelper.ThrowIfNotOnUIThread();
                 OnSolutionExistsAndFullyLoaded();
+
                 // We must call DeleteMarkedPackageDirectories outside of OnSolutionOpened, because OnSolutionOpened might be called in the constructor
                 // and DeleteOnRestartManager requires VsFileSystemProvider and RepositorySetings which both have dependencies on SolutionManager.
                 // In practice, this code gets executed even when a solution is opened directly during Visual Studio startup.
-                //DeleteOnRestartManager.Value.DeleteMarkedPackageDirectories();
+                //DeleteOnRestartManager.DeleteMarkedPackageDirectories(NuGetProjectContext);
             }
 
             return VSConstants.S_OK;

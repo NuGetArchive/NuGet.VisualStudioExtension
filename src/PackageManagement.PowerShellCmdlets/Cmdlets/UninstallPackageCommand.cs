@@ -3,9 +3,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.Management.Automation;
 using System.Threading;
 using Microsoft.VisualStudio.Shell;
+using NuGet.PackageManagement.VisualStudio;
 using NuGet.ProjectManagement;
 using Task = System.Threading.Tasks.Task;
 
@@ -15,6 +17,12 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
     public class UninstallPackageCommand : NuGetPowerShellBaseCommand
     {
         private UninstallationContext _context;
+        private IDeleteOnRestartManager _deleteOnRestartManager;
+
+        public UninstallPackageCommand()
+        {
+            _deleteOnRestartManager = ServiceLocator.GetInstance<IDeleteOnRestartManager>();
+        }
 
         [Parameter(Mandatory = true, ValueFromPipelineByPropertyName = true, Position = 0)]
         public virtual string Id { get; set; }
@@ -53,6 +61,19 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             UnsubscribeFromProgressEvents();
         }
 
+        protected override void EndProcessing()
+        {
+            base.EndProcessing();
+            var packageDirectoriesMarkedForDeletion = _deleteOnRestartManager.GetPackageDirectoriesMarkedForDeletion();
+            if (packageDirectoriesMarkedForDeletion != null && packageDirectoriesMarkedForDeletion.Count != 0)
+            {
+                var message = string.Format(
+                    System.Globalization.CultureInfo.CurrentCulture,
+                    Resources.Cmdlet_RequestRestartToCompleteUninstall,
+                    string.Join(", ", packageDirectoriesMarkedForDeletion));
+                WriteWarning(message);
+            }
+        }
         /// <summary>
         /// Async call for uninstall a package from the current project
         /// </summary>

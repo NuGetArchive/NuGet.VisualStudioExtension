@@ -13,6 +13,7 @@ using NuGet.Packaging.Core;
 using NuGet.ProjectManagement;
 using NuGet.Versioning;
 using Task = System.Threading.Tasks.Task;
+using NuGet.PackageManagement.VisualStudio;
 
 namespace NuGet.PackageManagement.PowerShellCmdlets
 {
@@ -26,6 +27,10 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         private bool _allowPrerelease;
 
         private List<NuGetProject> _projects = new List<NuGetProject>();
+
+        public SyncPackageCommand() : base(ServiceLocator.GetInstance<IDeleteOnRestartManager>())
+        {
+        }
 
         protected override void Preprocess()
         {
