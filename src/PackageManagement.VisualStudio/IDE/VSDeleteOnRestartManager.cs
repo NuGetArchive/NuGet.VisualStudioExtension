@@ -26,7 +26,6 @@ namespace NuGet.PackageManagement.VisualStudio
         {
             _settings = settings;
             _solutionManager = solutionManager;
-            _solutionManager.NuGetProjectAdded += OnNuGetProjectAdded;
             _solutionManager.SolutionOpened += OnSolutionOpened;
         }
 
@@ -62,9 +61,9 @@ namespace NuGet.PackageManagement.VisualStudio
         /// </summary>
         /// <param name="projectContext"></param>
         /// <returns></returns>
-        public System.Threading.Tasks.Task DeleteMarkedPackageDirectories(INuGetProjectContext projectContext)
+        public void DeleteMarkedPackageDirectories(INuGetProjectContext projectContext)
         {
-           return DeleteOnRestartManager.DeleteMarkedPackageDirectories(projectContext);
+           DeleteOnRestartManager.DeleteMarkedPackageDirectories(projectContext);
         }
 
         /// <summary>
@@ -72,7 +71,7 @@ namespace NuGet.PackageManagement.VisualStudio
         /// local package repository.
         /// </summary>
         /// <returns>List of package directories that need to be deleted.</returns>
-        public IList<string> GetPackageDirectoriesMarkedForDeletion()
+        public IReadOnlyList<string> GetPackageDirectoriesMarkedForDeletion()
         {
             return DeleteOnRestartManager.GetPackageDirectoriesMarkedForDeletion();
         }
@@ -81,12 +80,6 @@ namespace NuGet.PackageManagement.VisualStudio
         {
             DeleteOnRestartManager = new DeleteOnRestartManager(_settings, _solutionManager);
             DeleteOnRestartManager.DeleteMarkedPackageDirectories(_solutionManager.NuGetProjectContext);
-        }
-
-        private void OnNuGetProjectAdded(object sender, NuGetProjectEventArgs e)
-        {
-            // Reinitialize with the latest nuget project.
-            DeleteOnRestartManager = new DeleteOnRestartManager(e.NuGetProject);
-        }
+        }      
     }
 }

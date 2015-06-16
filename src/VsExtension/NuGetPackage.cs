@@ -621,7 +621,8 @@ namespace NuGetVSExtension
 
             var model = new PackageManagerModel(uiController, uiContext, isSolution: false);
             var vsWindowSearchHostfactory = ServiceLocator.GetGlobalService<SVsWindowSearchHostFactory, IVsWindowSearchHostFactory>();
-            var control = new PackageManagerControl(model, Settings, vsWindowSearchHostfactory);
+            var vsShell = ServiceLocator.GetGlobalService<SVsShell, IVsShell4>();
+            var control = new PackageManagerControl(model, Settings, vsWindowSearchHostfactory, vsShell);
             var windowPane = new PackageManagerWindowPane(control);
             var ppunkDocView = Marshal.GetIUnknownForObject(windowPane);
             var ppunkDocData = Marshal.GetIUnknownForObject(model);
@@ -812,7 +813,8 @@ namespace NuGetVSExtension
             var model = new PackageManagerModel(uiController, uiContext, isSolution: true);
             model.SolutionName = solutionName;
             var vsWindowSearchHostfactory = ServiceLocator.GetGlobalService<SVsWindowSearchHostFactory, IVsWindowSearchHostFactory>();
-            var control = new PackageManagerControl(model, Settings, vsWindowSearchHostfactory);
+            var vsShell = ServiceLocator.GetGlobalService<SVsShell, IVsShell4>();
+            var control = new PackageManagerControl(model, Settings, vsWindowSearchHostfactory, vsShell);
             var windowPane = new PackageManagerWindowPane(control);
             var ppunkDocView = Marshal.GetIUnknownForObject(windowPane);
             var ppunkDocData = Marshal.GetIUnknownForObject(model);
