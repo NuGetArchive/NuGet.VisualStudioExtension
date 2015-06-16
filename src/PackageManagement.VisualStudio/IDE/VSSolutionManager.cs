@@ -61,9 +61,6 @@ namespace NuGet.PackageManagement.VisualStudio
         public event EventHandler<NuGetProjectEventArgs> NuGetProjectRemoved;
         public event EventHandler<NuGetProjectEventArgs> NuGetProjectRenamed;
 
-      //  [Import]
-        //internal IDeleteOnRestartManager DeleteOnRestartManager { get; set; }
-
         public event EventHandler SolutionClosed;
         public event EventHandler SolutionClosing;
         public event EventHandler SolutionOpened;
@@ -602,11 +599,6 @@ namespace NuGet.PackageManagement.VisualStudio
             {
                 ThreadHelper.ThrowIfNotOnUIThread();
                 OnSolutionExistsAndFullyLoaded();
-
-                // We must call DeleteMarkedPackageDirectories outside of OnSolutionOpened, because OnSolutionOpened might be called in the constructor
-                // and DeleteOnRestartManager requires VsFileSystemProvider and RepositorySetings which both have dependencies on SolutionManager.
-                // In practice, this code gets executed even when a solution is opened directly during Visual Studio startup.
-                //DeleteOnRestartManager.DeleteMarkedPackageDirectories(NuGetProjectContext);
             }
 
             return VSConstants.S_OK;

@@ -12,15 +12,26 @@ using NuGet.ProjectManagement;
 
 namespace NuGet.PackageManagement.VisualStudio
 {
+    /// <summary>
+    /// An <see cref="DeleteOnRestartManager"/> manger which is used for surfacing errors and UI in VS.
+    /// </summary>
     [Export(typeof(IDeleteOnRestartManager))]
     public class VsDeleteOnRestartManager : DeleteOnRestartManager
     {
+        /// <summary>
+        /// Creates a new instance of <see cref="VsDeleteOnRestartManager"/>.
+        /// </summary>
         public VsDeleteOnRestartManager() : this(
             ServiceLocator.GetInstance<ISettings>(),
             ServiceLocator.GetInstance<ISolutionManager>())
         {
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="VsDeleteOnRestartManager"/>.
+        /// </summary>
+        /// <param name="settings">An <see cref="ISettings"/> for the current solution.</param>
+        /// <param name="solutionManager">An <see cref="ISolutionManager"/> for the current solution.</param>
         public VsDeleteOnRestartManager(ISettings settings, ISolutionManager solutionManager) :
             base(settings, solutionManager)
         {

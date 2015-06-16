@@ -64,10 +64,10 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         protected override void EndProcessing()
         {
             base.EndProcessing();
-            _deleteOnRestartManager.CheckAndRaisePackageDirectoriesMarkedForDeletion();
             var packageDirectoriesMarkedForDeletion = _deleteOnRestartManager.GetPackageDirectoriesMarkedForDeletion();
             if (packageDirectoriesMarkedForDeletion != null && packageDirectoriesMarkedForDeletion.Count != 0)
             {
+                _deleteOnRestartManager.CheckAndRaisePackageDirectoriesMarkedForDeletion();
                 var message = string.Format(
                     System.Globalization.CultureInfo.CurrentCulture,
                     Resources.Cmdlet_RequestRestartToCompleteUninstall,
