@@ -64,6 +64,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         protected override void EndProcessing()
         {
             base.EndProcessing();
+            _deleteOnRestartManager.CheckAndRaisePackageDirectoriesMarkedForDeletion();
             var packageDirectoriesMarkedForDeletion = _deleteOnRestartManager.GetPackageDirectoriesMarkedForDeletion();
             if (packageDirectoriesMarkedForDeletion != null && packageDirectoriesMarkedForDeletion.Count != 0)
             {
@@ -74,6 +75,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
                 WriteWarning(message);
             }
         }
+
         /// <summary>
         /// Async call for uninstall a package from the current project
         /// </summary>

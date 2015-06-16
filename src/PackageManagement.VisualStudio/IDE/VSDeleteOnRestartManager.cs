@@ -4,82 +4,38 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Threading;
+using Microsoft.VisualStudio.Shell;
 using NuGet.Configuration;
 using NuGet.Packaging.Core;
 using NuGet.ProjectManagement;
+
 namespace NuGet.PackageManagement.VisualStudio
 {
     [Export(typeof(IDeleteOnRestartManager))]
-    public class VsDeleteOnRestartManager : IDeleteOnRestartManager
+    public class VsDeleteOnRestartManager : DeleteOnRestartManager
     {
-        private ISolutionManager _solutionManager;
-        private ISettings _settings;
-        private IDeleteOnRestartManager _deleteOnRestartManager;
-
         public VsDeleteOnRestartManager() : this(
             ServiceLocator.GetInstance<ISettings>(),
             ServiceLocator.GetInstance<ISolutionManager>())
         {
         }
 
-        public VsDeleteOnRestartManager(ISettings settings, ISolutionManager solutionManager)
+        public VsDeleteOnRestartManager(ISettings settings, ISolutionManager solutionManager) :
+            base(settings, solutionManager)
         {
-            _settings = settings;
-            _solutionManager = solutionManager;
-            _solutionManager.SolutionOpened += OnSolutionOpened;
+            SolutionManager.SolutionOpened += OnSolutionOpenedOrClosed;
+            SolutionManager.SolutionClosed += OnSolutionOpenedOrClosed;
         }
 
-        public IDeleteOnRestartManager DeleteOnRestartManager
+        private void OnSolutionOpenedOrClosed(object sender, EventArgs e)
         {
-            get
-            {
-                if (_deleteOnRestartManager == null)
-                {
-                    _deleteOnRestartManager = new DeleteOnRestartManager(_settings, _solutionManager);
-                }
-                return _deleteOnRestartManager;
-            }
+            // This is a solution event. Should be on the UI thread
+            ThreadHelper.ThrowIfNotOnUIThread();
 
-            set
-            {
-                _deleteOnRestartManager = value;
-            }
+            // We need to do the check even on Solution Closed because, let's say if the yellow Update bar
+            // is showing and the user closes the solution; in that case, we want to hide the Update bar.
+            DeleteMarkedPackageDirectories(SolutionManager.NuGetProjectContext);
         }
-
-        /// <summary>
-        /// Marks package directory for future removal if it was not fully deleted during the normal uninstall process
-        /// if the directory does not contain any added or modified files.
-        /// </summary>
-        public void MarkPackageDirectoryForDeletion(PackageIdentity package, string packageRoot, INuGetProjectContext projectContext)
-        {
-            DeleteOnRestartManager.MarkPackageDirectoryForDeletion(package, packageRoot, projectContext);
-        }
-
-        /// <summary>
-        /// Attempts to remove marked package directories that were unable to be fully deleted
-        /// during the original uninstall.
-        /// </summary>
-        /// <param name="projectContext"></param>
-        /// <returns></returns>
-        public void DeleteMarkedPackageDirectories(INuGetProjectContext projectContext)
-        {
-           DeleteOnRestartManager.DeleteMarkedPackageDirectories(projectContext);
-        }
-
-        /// <summary>
-        /// Gets the list of package directories that are still need to be deleted in the
-        /// local package repository.
-        /// </summary>
-        /// <returns>List of package directories that need to be deleted.</returns>
-        public IReadOnlyList<string> GetPackageDirectoriesMarkedForDeletion()
-        {
-            return DeleteOnRestartManager.GetPackageDirectoriesMarkedForDeletion();
-        }
-
-        private void OnSolutionOpened(object sender, EventArgs e)
-        {
-            DeleteOnRestartManager = new DeleteOnRestartManager(_settings, _solutionManager);
-            DeleteOnRestartManager.DeleteMarkedPackageDirectories(_solutionManager.NuGetProjectContext);
-        }      
     }
 }
