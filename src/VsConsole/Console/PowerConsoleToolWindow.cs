@@ -65,9 +65,7 @@ namespace NuGetConsole.Implementation
 
         private IVsShell4 VsShell
         {
-            get {
-
-                return this.GetService<IVsShell4>(typeof(SVsShell)); }
+            get { return this.GetService<IVsShell4>(typeof(SVsShell)); }
         }
 
         private IVsUIShell VsUIShell

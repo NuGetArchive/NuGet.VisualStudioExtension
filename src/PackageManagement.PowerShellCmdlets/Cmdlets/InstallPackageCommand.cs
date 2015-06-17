@@ -32,11 +32,6 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         private bool _allowPrerelease;
         private bool _isHttp;
 
-
-        public InstallPackageCommand() : base(ServiceLocator.GetInstance<IDeleteOnRestartManager>())
-        {
-        }
-
         protected override void Preprocess()
         {
             base.Preprocess();

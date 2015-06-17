@@ -31,11 +31,6 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         private DependencyBehavior _updateVersionEnum;
         private NuGetVersion _nugetVersion;
 
-
-        public UpdatePackageCommand() : base(ServiceLocator.GetInstance<IDeleteOnRestartManager>())
-        {
-        }
-
         [Parameter(Mandatory = true, ValueFromPipelineByPropertyName = true, Position = 0, ParameterSetName = "Project")]
         [Parameter(ValueFromPipelineByPropertyName = true, Position = 0, ParameterSetName = "All")]
         [Parameter(ValueFromPipelineByPropertyName = true, Position = 0, ParameterSetName = "Reinstall")]

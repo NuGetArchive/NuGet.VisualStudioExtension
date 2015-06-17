@@ -28,10 +28,6 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
 
         private List<NuGetProject> _projects = new List<NuGetProject>();
 
-        public SyncPackageCommand() : base(ServiceLocator.GetInstance<IDeleteOnRestartManager>())
-        {
-        }
-
         protected override void Preprocess()
         {
             base.Preprocess();

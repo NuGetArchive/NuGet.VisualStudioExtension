@@ -21,9 +21,9 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
     {
         private IDeleteOnRestartManager _deleteOnRestartManager;
 
-        public PackageActionBaseCommand(IDeleteOnRestartManager deleteOnRestartManager)
+        public PackageActionBaseCommand()
         {
-            _deleteOnRestartManager = deleteOnRestartManager;
+            _deleteOnRestartManager = ServiceLocator.GetInstance<IDeleteOnRestartManager>();
         }
 
         [Parameter(Mandatory = true, ValueFromPipelineByPropertyName = true, Position = 0)]
