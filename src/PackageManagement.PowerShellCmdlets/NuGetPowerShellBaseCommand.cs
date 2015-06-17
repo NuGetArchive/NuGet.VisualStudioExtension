@@ -42,6 +42,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         private readonly Semaphore _scriptEndSemaphore = new Semaphore(0, Int32.MaxValue);
         private readonly ISourceRepositoryProvider _resourceRepositoryProvider;
         private readonly ICommonOperations _commonOperations;
+        private readonly IDeleteOnRestartManager _deleteOnRestartManager;
 
         // TODO: Hook up DownloadResource.Progress event
         private readonly IHttpClientEvents _httpClientEvents;
@@ -66,6 +67,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
             SourceControlManagerProvider = ServiceLocator.GetInstance<ISourceControlManagerProvider>();
             _commonOperations = ServiceLocator.GetInstance<ICommonOperations>();
             PackageRestoreManager = ServiceLocator.GetInstance<IPackageRestoreManager>();
+            _deleteOnRestartManager = ServiceLocator.GetInstance<IDeleteOnRestartManager>();
 
             if (_commonOperations != null)
             {
@@ -80,7 +82,11 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         /// </summary>
         protected NuGetPackageManager PackageManager
         {
-            get { return new NuGetPackageManager(_resourceRepositoryProvider, ConfigSettings, VsSolutionManager); }
+            get { return new NuGetPackageManager(
+                _resourceRepositoryProvider,
+                ConfigSettings,
+                VsSolutionManager,
+                _deleteOnRestartManager); }
         }
 
         /// <summary>

@@ -20,13 +20,19 @@ namespace NuGet.VisualStudio
         private ISourceRepositoryProvider _sourceRepositoryProvider;
         private ISettings _settings;
         private ISolutionManager _solutionManager;
+        private IDeleteOnRestartManager _deleteOnRestartManager;
 
         [ImportingConstructor]
-        public VsPackageUninstaller(ISourceRepositoryProvider sourceRepositoryProvider, ISettings settings, ISolutionManager solutionManager)
+        public VsPackageUninstaller(
+            ISourceRepositoryProvider sourceRepositoryProvider,
+            ISettings settings,
+            ISolutionManager solutionManager,
+            IDeleteOnRestartManager deleteOnRestartManager)
         {
             _sourceRepositoryProvider = sourceRepositoryProvider;
             _settings = settings;
             _solutionManager = solutionManager;
+            _deleteOnRestartManager = deleteOnRestartManager;
         }
 
         public void UninstallPackage(Project project, string packageId, bool removeDependencies)
@@ -43,7 +49,12 @@ namespace NuGet.VisualStudio
 
             ThreadHelper.JoinableTaskFactory.Run(async delegate
                 {
-                    NuGetPackageManager packageManager = new NuGetPackageManager(_sourceRepositoryProvider, _settings, _solutionManager);
+                    NuGetPackageManager packageManager =
+                       new NuGetPackageManager(
+                           _sourceRepositoryProvider,
+                           _settings,
+                           _solutionManager,
+                           _deleteOnRestartManager);
 
                     UninstallationContext uninstallContext = new UninstallationContext(removeDependencies, false);
                     VSAPIProjectContext projectContext = new VSAPIProjectContext();

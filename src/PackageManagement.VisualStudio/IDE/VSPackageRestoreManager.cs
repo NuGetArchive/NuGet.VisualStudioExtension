@@ -19,12 +19,17 @@ namespace NuGet.PackageManagement.VisualStudio
             : this(
                 ServiceLocator.GetInstance<ISourceRepositoryProvider>(),
                 ServiceLocator.GetInstance<ISettings>(),
-                ServiceLocator.GetInstance<ISolutionManager>())
+                ServiceLocator.GetInstance<ISolutionManager>(),
+                ServiceLocator.GetInstance<IDeleteOnRestartManager>())
         {
         }
 
-        public VSPackageRestoreManager(ISourceRepositoryProvider sourceRepositoryProvider, ISettings settings, ISolutionManager solutionManager)
-            : base(sourceRepositoryProvider, settings, solutionManager)
+        public VSPackageRestoreManager(
+            ISourceRepositoryProvider sourceRepositoryProvider,
+            ISettings settings,
+            ISolutionManager solutionManager,
+            IDeleteOnRestartManager deleteOnRestoreManager)
+            : base(sourceRepositoryProvider, settings, solutionManager, deleteOnRestoreManager)
         {
             SolutionManager = solutionManager;
             SolutionManager.NuGetProjectAdded += OnNuGetProjectAdded;

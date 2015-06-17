@@ -64,7 +64,12 @@ namespace NuGet.PackageManagement.VisualStudio
             var sourceRepositoryProvider = ServiceLocator.GetInstance<ISourceRepositoryProvider>();
             var solutionManager = ServiceLocator.GetInstance<ISolutionManager>();
             var settings = ServiceLocator.GetInstance<ISettings>();
-            var packageManager = new NuGetPackageManager(sourceRepositoryProvider, settings, solutionManager);
+            var deleteOnRestartManager = ServiceLocator.GetInstance<IDeleteOnRestartManager>();
+            var packageManager = new NuGetPackageManager(
+                sourceRepositoryProvider,
+                settings,
+                solutionManager,
+                deleteOnRestartManager);
 
             foreach (PackageReference packageReference in packageReferences)
             {
