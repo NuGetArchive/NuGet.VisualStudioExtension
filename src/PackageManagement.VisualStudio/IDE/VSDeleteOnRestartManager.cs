@@ -228,6 +228,9 @@ namespace NuGet.PackageManagement.VisualStudio
             // We need to do the check even on Solution Closed because, let's say if the yellow Update bar
             // is showing and the user closes the solution; in that case, we want to hide the Update bar.
             DeleteMarkedPackageDirectories(SolutionManager.NuGetProjectContext);
+
+            // There can be packages which still are not deleted.
+            CheckAndRaisePackageDirectoriesMarkedForDeletion();
         }
     }
 }

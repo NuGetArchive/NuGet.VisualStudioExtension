@@ -25,9 +25,17 @@ namespace NuGetConsole
 
             InitializeComponent();
 
-            RootLayout.Children.Add(new ProductUpdateBar(productUpdateService));
-            RootLayout.Children.Add(new PackageRestoreBar(solutionManager, packageRestoreManager));
-            RootLayout.Children.Add(new RestartRequestBar(deleteOnRestartManager, shell));
+            var productBar = new ProductUpdateBar(productUpdateService);
+            productBar.SetValue(Grid.RowProperty, 0);
+            RootLayout.Children.Add(productBar);
+
+            var restoreBar = new PackageRestoreBar(solutionManager, packageRestoreManager);
+            restoreBar.SetValue(Grid.RowProperty, 1);
+            RootLayout.Children.Add(restoreBar);
+
+            var restartBar = new RestartRequestBar(deleteOnRestartManager, shell);
+            restartBar.SetValue(Grid.RowProperty, 2);
+            RootLayout.Children.Add(restartBar);
 
             // Set DynamicResource binding in code
             // The reason we can't set it in XAML is that the VsBrushes class come from either
@@ -38,7 +46,7 @@ namespace NuGetConsole
 
         public void AddConsoleEditor(UIElement content)
         {
-            Grid.SetRow(content, 1);
+            Grid.SetRow(content, 4);
             RootLayout.Children.Add(content);
         }
 

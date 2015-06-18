@@ -42,7 +42,7 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         private readonly Semaphore _scriptEndSemaphore = new Semaphore(0, Int32.MaxValue);
         private readonly ISourceRepositoryProvider _resourceRepositoryProvider;
         private readonly ICommonOperations _commonOperations;
-        private readonly IDeleteOnRestartManager _deleteOnRestartManager;
+        protected readonly IDeleteOnRestartManager _deleteOnRestartManager;
 
         // TODO: Hook up DownloadResource.Progress event
         private readonly IHttpClientEvents _httpClientEvents;

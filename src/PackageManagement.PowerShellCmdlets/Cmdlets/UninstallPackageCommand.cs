@@ -17,12 +17,6 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
     public class UninstallPackageCommand : NuGetPowerShellBaseCommand
     {
         private UninstallationContext _context;
-        private IDeleteOnRestartManager _deleteOnRestartManager;
-
-        public UninstallPackageCommand()
-        {
-            _deleteOnRestartManager = ServiceLocator.GetInstance<IDeleteOnRestartManager>();
-        }
 
         [Parameter(Mandatory = true, ValueFromPipelineByPropertyName = true, Position = 0)]
         public virtual string Id { get; set; }
