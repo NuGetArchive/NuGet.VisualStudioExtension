@@ -21,40 +21,40 @@
     </Reference>
     <Reference Include="NuGet.Configuration">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\NuGet.Configuration.3.0.0-beta\lib\net45\NuGet.Configuration.dll</HintPath>
+      <HintPath>..\..\..\packages\NuGet.Configuration.3.0.0\lib\net45\NuGet.Configuration.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Frameworks">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\NuGet.Frameworks.3.0.0-beta\lib\net45\NuGet.Frameworks.dll</HintPath>
+      <HintPath>..\..\..\packages\NuGet.Frameworks.3.0.0\lib\net45\NuGet.Frameworks.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.PackageManagement">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\NuGet.PackageManagement.3.0.0-beta\lib\net45\NuGet.PackageManagement.dll</HintPath>
+      <HintPath>..\..\..\packages\NuGet.PackageManagement.3.0.0\lib\net45\NuGet.PackageManagement.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Packaging">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\NuGet.Packaging.3.0.0-beta\lib\net45\NuGet.Packaging.dll</HintPath>
+      <HintPath>..\..\..\packages\NuGet.Packaging.3.0.0\lib\net45\NuGet.Packaging.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Packaging.Core">
-      <HintPath>..\..\..\packages\NuGet.Packaging.Core.3.0.0-beta\lib\net45\NuGet.Packaging.Core.dll</HintPath>
+      <HintPath>..\..\..\packages\NuGet.Packaging.Core.3.0.0\lib\net45\NuGet.Packaging.Core.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Packaging.Core.Types">
-      <HintPath>..\..\..\packages\NuGet.Packaging.Core.Types.3.0.0-beta\lib\net45\NuGet.Packaging.Core.Types.dll</HintPath>
+      <HintPath>..\..\..\packages\NuGet.Packaging.Core.Types.3.0.0\lib\net45\NuGet.Packaging.Core.Types.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.ProjectManagement">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\NuGet.PackageManagement.3.0.0-beta\lib\net45\NuGet.ProjectManagement.dll</HintPath>
+      <HintPath>..\..\..\packages\NuGet.PackageManagement.3.0.0\lib\net45\NuGet.ProjectManagement.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Protocol.Core.Types">
-      <HintPath>..\..\..\packages\NuGet.Protocol.Core.Types.3.0.0-beta\lib\net45\NuGet.Protocol.Core.Types.dll</HintPath>
+      <HintPath>..\..\..\packages\NuGet.Protocol.Core.Types.3.0.0\lib\net45\NuGet.Protocol.Core.Types.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Resolver">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\NuGet.Resolver.3.0.0-beta\lib\net45\NuGet.Resolver.dll</HintPath>
+      <HintPath>..\..\..\packages\NuGet.Resolver.3.0.0\lib\net45\NuGet.Resolver.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Versioning">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\NuGet.Versioning.3.0.0-beta\lib\net45\NuGet.Versioning.dll</HintPath>
+      <HintPath>..\..\..\packages\NuGet.Versioning.3.0.0\lib\net45\NuGet.Versioning.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
