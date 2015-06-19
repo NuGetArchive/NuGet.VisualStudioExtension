@@ -22,7 +22,7 @@ using System.Runtime.InteropServices;
 #if !FIXED_ASSEMBLY_VERSION
 
 [assembly: AssemblyVersion("3.0.0.0")]
-[assembly: AssemblyInformationalVersion("3.0.0-beta")]
+[assembly: AssemblyInformationalVersion("3.0.0")]
 #endif
 
 [assembly: NeutralResourcesLanguage("en-US")]
