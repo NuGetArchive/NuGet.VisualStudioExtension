@@ -27,6 +27,14 @@ namespace NuGet.VisualStudio
         Task<IVsPackageSpec> ReadAsync(Project project, CancellationToken token);
 
         /// <summary>
+        /// Parses a project.json file from a stream.
+        /// </summary>
+        /// <param name="stream">project.json file data.</param>
+        /// <param name="token">Cancellation token</param>
+        /// <returns>Returns the parsed project.json file.</returns>
+        Task<IVsPackageSpec> ReadAsync(Stream stream, CancellationToken token);
+
+        /// <summary>
         /// Writes an <see cref= "IVsPackageSpec" /> to the project.json file in a project.
         /// </summary>
         /// <remarks>The project must already contain a project.json file.</remarks>
@@ -34,6 +42,15 @@ namespace NuGet.VisualStudio
         /// <param name="project">DTE project containg a project.json file.</param>
         /// <param name="token">Cancellation token</param>
         Task WriteAsync(IVsPackageSpec packageSpec, Project project, CancellationToken token);
+
+        /// <summary>
+        /// Writes an <see cref= "IVsPackageSpec" /> to the project.json file in a stream.
+        /// </summary>
+        /// <remarks>The project must already contain a project.json file.</remarks>
+        /// <param name="packageSpec">project.json file data.</param>
+        /// <param name="outputStream">Output stream to write the project.json file data into.</param>
+        /// <param name="token">Cancellation token</param>
+        Task WriteAsync(IVsPackageSpec packageSpec, Stream outputStream, CancellationToken token);
 
         /// <summary>
         /// Generates a project.lock.json file for the project and restores all packages to the

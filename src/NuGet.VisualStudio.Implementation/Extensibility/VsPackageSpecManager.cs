@@ -9,9 +9,7 @@ using System.Threading.Tasks;
 using EnvDTE;
 using Newtonsoft.Json.Linq;
 using NuGet.PackageManagement;
-using NuGet.ProjectManagement;
 using NuGet.ProjectManagement.Projects;
-using NuGet.ProjectModel;
 using NuGet.Protocol.Core.Types;
 
 namespace NuGet.VisualStudio.Implementation
@@ -34,8 +32,32 @@ namespace NuGet.VisualStudio.Implementation
             _settings = settings;
         }
 
+        public async Task<IVsPackageSpec> ReadAsync(Stream stream, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+
+            using (var streamReader = new StreamReader(stream))
+            {
+                var json = JObject.Parse(await streamReader.ReadToEndAsync());
+
+                return new VsPackageSpec(json);
+            }
+        }
+
+        public async Task WriteAsync(IVsPackageSpec packageSpec, Stream outputStream, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+
+            using (var writer = new StreamWriter(outputStream))
+            {
+                await writer.WriteAsync(packageSpec.Json);
+            }
+        }
+
         public async Task<IVsPackageSpec> ReadAsync(Project project, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             IVsPackageSpec spec = null;
 
             var nugetProject = await PackageManagementHelpers.GetProjectAsync(_solutionManager, project) as BuildIntegratedNuGetProject;
@@ -52,6 +74,8 @@ namespace NuGet.VisualStudio.Implementation
 
         public async Task WriteAsync(IVsPackageSpec packageSpec, Project project, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             var nugetProject = await PackageManagementHelpers.GetProjectAsync(_solutionManager, project) as BuildIntegratedNuGetProject;
 
             if (nugetProject != null)
@@ -76,6 +100,13 @@ namespace NuGet.VisualStudio.Implementation
                 sources.UnionWith(_sourceRepositoryProvider.GetRepositories().Select(source => source.PackageSource.Source));
 
                 var result = await BuildIntegratedRestoreUtility.RestoreAsync(nugetProject, new VSAPIProjectContext(), sources, _settings, token);
+
+                token.ThrowIfCancellationRequested();
+
+                // Write out the results
+                result.Commit(new VSAPILogger());
+
+                restoreResult = new VsPackageRestoreResult(result);
             }
 
             return restoreResult;
