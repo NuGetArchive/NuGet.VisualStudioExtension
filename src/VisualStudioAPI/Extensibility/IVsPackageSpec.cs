@@ -15,6 +15,11 @@ namespace NuGet.VisualStudio
     public interface IVsPackageSpec
     {
         /// <summary>
+        /// Returns the raw json output for writing.
+        /// </summary>
+        string Json { get; }
+
+        /// <summary>
         /// Reads dependency entries from the project.json file.
         /// </summary>
         IReadOnlyList<IVsPackageSpecDependency> Dependencies { get; }

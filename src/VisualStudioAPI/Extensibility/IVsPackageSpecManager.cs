@@ -27,22 +27,6 @@ namespace NuGet.VisualStudio
         Task<IVsPackageSpec> ReadAsync(Project project, CancellationToken token);
 
         /// <summary>
-        /// Parses a project.json file from a stream.
-        /// </summary>
-        /// <param name="stream">Stream containing the text of a project.json file.</param>
-        /// <param name="token">Cancellation token</param>
-        /// <returns>Returns the parsed project.json file.</returns>
-        Task<IVsPackageSpec> ReadAsync(Stream stream, CancellationToken token);
-
-        /// <summary>
-        /// Writes an <see cref="IVsPackageSpec"/> to a stream.
-        /// </summary>
-        /// <param name="packageSpec">project.json file data.</param>
-        /// <param name="stream">Output stream to write the project.json data into.</param>
-        /// <param name="token">Cancellation token</param>
-        Task WriteAsync(IVsPackageSpec packageSpec, Stream stream, CancellationToken token);
-
-        /// <summary>
         /// Writes an <see cref= "IVsPackageSpec" /> to the project.json file in a project.
         /// </summary>
         /// <remarks>The project must already contain a project.json file.</remarks>
@@ -56,7 +40,7 @@ namespace NuGet.VisualStudio
         /// global packages folder.
         /// </summary>
         /// <remarks><paramref name="additionalSourcesPaths"/> will be used along with the existing sources
-        /// when finding and restoring packages.</remarks>
+        /// when finding and restoring packages. If no additional sources are needed this may be empty.</remarks>
         /// <param name="project">DTE project containing a project.json file.</param>
         /// <param name="additionalSourcePaths">Additional sources that may be used to restore packages from.</param>
         /// <param name="token">Cancellation token</param>

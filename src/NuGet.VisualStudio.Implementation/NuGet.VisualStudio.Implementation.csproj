@@ -110,6 +110,7 @@
     <Compile Include="Extensibility\VsPackageMetadataComparer.cs" />
     <Compile Include="Extensibility\VsPackageRestorer.cs" />
     <Compile Include="Extensibility\VsPackageSourceProvider.cs" />
+    <Compile Include="Extensibility\VsPackageSpecManager.cs" />
     <Compile Include="Extensibility\VsPackageUninstaller.cs" />
     <Compile Include="ExtensionManagerShim.cs" />
     <Compile Include="MessageHelper.cs" />
