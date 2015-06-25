@@ -1,11 +1,12 @@
 {
-    "dependencies": {
-        "NuGet.Resolver": "3.1.0-*"
-    },
-    "frameworks": {
-        "net45": {}
-    },
-    "runtimes": {
-        "win-anycpu": {}
-    }
+  "dependencies": {
+    "NuGet.Resolver": "3.1.0-*",
+    "NuGet.ProjectModel": "3.1.0-*"
+  },
+  "frameworks": {
+    "net45": { }
+  },
+  "runtimes": {
+    "win-anycpu": { }
+  }
 }

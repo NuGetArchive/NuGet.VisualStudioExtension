@@ -109,7 +109,12 @@
     <Compile Include="Extensibility\VsPackageMetadata.cs" />
     <Compile Include="Extensibility\VsPackageMetadataComparer.cs" />
     <Compile Include="Extensibility\VsPackageRestorer.cs" />
+    <Compile Include="Extensibility\VsPackageRestoreResult.cs" />
     <Compile Include="Extensibility\VsPackageSourceProvider.cs" />
+    <Compile Include="Extensibility\VsPackageSpec.cs" />
+    <Compile Include="Extensibility\VsPackageSpecDependency.cs" />
+    <Compile Include="Extensibility\VsPackageSpecEntry.cs" />
+    <Compile Include="Extensibility\VsPackageSpecManager.cs" />
     <Compile Include="Extensibility\VsPackageUninstaller.cs" />
     <Compile Include="ExtensionManagerShim.cs" />
     <Compile Include="MessageHelper.cs" />
@@ -129,6 +134,7 @@
     </Compile>
     <Compile Include="Utility\PumpingJTF.cs" />
     <Compile Include="Utility\XmlUtility.cs" />
+    <Compile Include="VSAPILogger.cs" />
     <Compile Include="VSAPIProjectContext.cs" />
     <Compile Include="VsTemplateWizard.cs" />
   </ItemGroup>
