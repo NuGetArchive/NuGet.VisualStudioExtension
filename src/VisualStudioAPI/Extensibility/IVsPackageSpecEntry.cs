@@ -14,7 +14,7 @@ namespace NuGet.VisualStudio
     public interface IVsPackageSpecEntry
     {
         /// <summary>
-        /// Entry Id
+        /// The identitier or property name of the entry.
         /// </summary>
         string Id { get; }
     }
