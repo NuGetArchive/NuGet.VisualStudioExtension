@@ -1,0 +1,14 @@
+﻿{
+  "dependencies": {
+    "xunit": "2.0.0",
+    "xunit.runner.visualstudio": "2.0.0",
+    "Moq": "4.2.1409.1722",
+    "NuGet.Resolver": "3.1.0-*"
+  },
+  "frameworks": {
+    "net45": {}
+  },
+  "runtimes": {
+    "win-anycpu": {}
+  }
+}

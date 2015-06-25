@@ -118,6 +118,7 @@
         <TestProjects Include="$(NuGetTestRoot)\TeamFoundationServer.Test\TeamFoundationServer.Test.csproj" Condition="'$(MonoBuild)' == ''" />
         <TestProjects Include="$(NuGetTestRoot)\Test.Integration\Test.Integration.csproj" Condition="'$(MonoBuild)' == ''" />
         <TestProjects Include="$(NuGetTestRoot)\VsEvents.Test\VsEvents.Test.csproj" Condition="'$(MonoBuild)' == ''" />
+        <TestProjects Include="$(NuGetTestRoot)\Unit\PackageInstallUninstallTests.csproj" />    
     </ItemGroup>
 
     <ItemGroup>
@@ -165,6 +166,7 @@
             <ProjectsToRestore Include="$(RootDir)\src\Options\Options.csproj" />
             <ProjectsToRestore Include="$(RootDir)\src\VsExtension\VsExtension.csproj" />
 
+            <ProjectsToRestore Include="$(RootDir)\test\Unit\PackageInstallUninstallTests.csproj" />
         </ItemGroup>
 
         <Exec Command="$(RootDir)\packages\NuGet.CommandLine.Cmd\build\NuGet.CommandLine.cmd restore $(NuGetCommndLineCmdSources) %(ProjectsToRestore.FullPath)"  />
