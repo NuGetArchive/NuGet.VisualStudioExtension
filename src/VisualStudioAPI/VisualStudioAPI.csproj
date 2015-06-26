@@ -106,12 +106,15 @@
     <Compile Include="..\..\Common\CommonAssemblyInfo.cs">
       <Link>Properties\CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="Extensibility\IVsPackageSourceContext.cs" />
     <Compile Include="Extensibility\IVsPackageSourceProvider.cs" />
     <Compile Include="Extensibility\IVsPackageInstaller.cs" />
     <Compile Include="Extensibility\IVsPackageInstallerEvents.cs" />
     <Compile Include="Extensibility\IVsPackageInstallerServices.cs" />
     <Compile Include="Extensibility\IVsPackageMetadata.cs" />
     <Compile Include="Extensibility\IVsPackageRestorer.cs" />
+    <Compile Include="Extensibility\IVsPackageSyncManager.cs" />
+    <Compile Include="Extensibility\IVsPackageSyncResult.cs" />
     <Compile Include="Extensibility\IVsPackageUninstaller.cs" />
     <Compile Include="Extensibility\VsPackageEventHandler.cs" />
     <Compile Include="IRegistryKey.cs" />
