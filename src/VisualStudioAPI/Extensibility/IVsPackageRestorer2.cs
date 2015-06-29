@@ -14,15 +14,14 @@ namespace NuGet.VisualStudio
     /// </summary>
     [ComImport]
     [Guid("5006BAC9-CCC7-4AD1-85C2-BE0AF6463667")]
-    public interface IVsPackageSyncManager
+    public interface IVsPackageRestorer2
     {
         /// <summary>
-        /// Restore packages for a project.json based project and generate a project.lock.json file.
+        /// Restore packages for a project using the source context.
         /// </summary>
-        /// <param name="project">DTE project to update.</param>
-        /// <param name="sources">Source information used to find packages.</param>
-        /// <param name="token">Cancel token</param>
-        /// <returns>Returns the operation status.</returns>
-        Task<IVsPackageSyncResult> UpdateProjectAync(Project project, IVsPackageSourceContext sources, CancellationToken token);
+        /// <param name="project">Project to restore packages for.</param>
+        /// <param name="sources">Sources to use during package restore.</param>
+        /// <param name="token">Cancel token to allow cancelling the restore.</param>
+        Task RestorePackages(Project project, IVsPackageSourceContext sources, CancellationToken token);
     }
 }
