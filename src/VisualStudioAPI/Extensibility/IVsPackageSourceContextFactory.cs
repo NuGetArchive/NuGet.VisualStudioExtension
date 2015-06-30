@@ -19,13 +19,14 @@ namespace NuGet.VisualStudio
         /// </summary>
         /// <param name="includeEnabledSources">If true all default enabled sources will be added.</param>
         /// <param name="sources">Additional source urls or folder paths.</param>
-        /// <param name="registryKeySources">Registry keys that point that package sources.</param>
+        /// <param name="registryKeySources">Registry key names. These can reference a folder of nupkgs 
+        /// or version folder based sources.</param>
         /// <param name="extensionIdSources">Extension ids to be used as repositories.</param>
         /// <returns>An <see cref="IVsPackageSourceContext"/> containing the given sources.</returns>
         IVsPackageSourceContext CreateContext(
             bool includeEnabledSources,
             IEnumerable<string> sources, 
-            IEnumerable<string> registryKeySources, 
+            IEnumerable<string> registryKeySources,
             IEnumerable<string> extensionIdSources);
     }
 }

@@ -106,7 +106,7 @@
     <Compile Include="..\..\Common\CommonAssemblyInfo.cs">
       <Link>Properties\CommonAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="Extensibility\IVsPackageBatchController.cs" />
+    <Compile Include="Extensibility\IVsPackageBatching.cs" />
     <Compile Include="Extensibility\IVsPackageSourceContext.cs" />
     <Compile Include="Extensibility\IVsPackageSourceContextFactory.cs" />
     <Compile Include="Extensibility\IVsPackageSourceProvider.cs" />

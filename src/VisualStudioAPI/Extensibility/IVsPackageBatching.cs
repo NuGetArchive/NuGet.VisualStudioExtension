@@ -1,7 +1,7 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-namespace NuGet.VisualStudio.Extensibility
+namespace NuGet.VisualStudio
 {
     /// <summary>
     /// IVsPackageBatchController provides support for disabling automatic updates and package restores
@@ -10,7 +10,8 @@ namespace NuGet.VisualStudio.Extensibility
     /// Operations that edit project.json should start a batch mode operation here before editting the file
     /// to avoid multiple restores while making changes to the file.
     /// </summary>
-    public interface IVsPackageBatchController
+    /// <remarks>IVsPackageBatchController is thread safe.</remarks>
+    public interface IVsPackageBatching
     {
         /// <summary>
         /// Start a batch mode operation. This will disable automatic operations triggered
