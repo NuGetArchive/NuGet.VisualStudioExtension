@@ -26,7 +26,7 @@ using Task = System.Threading.Tasks.Task;
 
 namespace NuGetVSExtension
 {
-    internal sealed class OnBuildPackageRestorer : ILogger
+    internal class OnBuildPackageRestorer : ILogger
     {
         private const string LogEntrySource = "NuGet PackageRestorer";
 
@@ -555,14 +555,15 @@ namespace NuGetVSExtension
         private void WriteLine(VerbosityLevel verbosity, string format, params object[] args)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            var outputPane = GetBuildOutputPane();
-            if (outputPane == null)
-            {
-                return;
-            }
 
             if (_msBuildOutputVerbosity >= (int)verbosity)
             {
+                var outputPane = GetBuildOutputPane();
+                if (outputPane == null)
+                {
+                    return;
+                }
+
                 var msg = string.Format(CultureInfo.CurrentCulture, format, args);
                 outputPane.OutputString(msg);
                 outputPane.OutputString(Environment.NewLine);
@@ -629,28 +630,40 @@ namespace NuGetVSExtension
                 return;
             }
 
+            // If the verbosity level of message is worse than VerbosityLevel.Normal, that is,
+            // VerbosityLevel.Detailed or VerbosityLevel.Diagnostic, AND,
+            // _msBuildOutputVerbosity is lesser than verbosityLevel; do nothing
+            if (verbosityLevel > VerbosityLevel.Normal && _msBuildOutputVerbosity < (int)verbosityLevel)
+            {
+                return;
+            }
+
             ThreadHelper.JoinableTaskFactory.Run(async delegate
             {
                 // Switch to main thread to update the progress dialog, output window or error list window
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                // When both currentStep and totalSteps are 0, we get a marquee on the dialog
-                var progressData = new ThreadedWaitDialogProgressData(message,
-                    string.Empty,
-                    string.Empty,
-                    isCancelable: true,
-                    currentStep: 0,
-                    totalSteps: 0);
+                // Only show messages with VerbosityLevel.Normal, VerbosityLevel.Minimal or VerbosityLevel.Quiet
+                if (verbosityLevel <= VerbosityLevel.Normal)
+                {
+                    // When both currentStep and totalSteps are 0, we get a marquee on the dialog
+                    var progressData = new ThreadedWaitDialogProgressData(message,
+                        string.Empty,
+                        string.Empty,
+                        isCancelable: true,
+                        currentStep: 0,
+                        totalSteps: 0);
 
-                // Update the progress dialog
-                ThreadedWaitDialogProgress.Report(progressData);
+                    // Update the progress dialog
+                    ThreadedWaitDialogProgress.Report(progressData);
+                }
 
                 // Write to the output window. Based on _msBuildOutputVerbosity, the message may or may not
                 // get shown on the output window. Default is VerbosityLevel.Minimal
                 WriteLine(verbosityLevel, message);
 
                 // VerbosityLevel.Quiet corresponds to ILogger.LogError, and,
-                // VerbosityLevel.Minimal correspons to ILogger.LogWarning
+                // VerbosityLevel.Minimal corresponds to ILogger.LogWarning
                 // In these 2 cases, we add an error or warning to the error list window
                 if (verbosityLevel == VerbosityLevel.Quiet || verbosityLevel == VerbosityLevel.Minimal)
                 {
