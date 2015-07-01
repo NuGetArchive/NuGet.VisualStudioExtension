@@ -18,6 +18,7 @@ using NuGet.Commands;
 using NuGet.Configuration;
 using NuGet.PackageManagement;
 using NuGet.PackageManagement.VisualStudio;
+using NuGet.Packaging;
 using NuGet.Packaging.Core;
 using NuGet.ProjectManagement;
 using NuGet.ProjectManagement.Projects;
@@ -32,6 +33,9 @@ namespace NuGetVSExtension
 
         private readonly DTE _dte;
         private bool _outputOptOutMessage;
+
+        private IReadOnlyDictionary<string, BuildIntegratedProjectCacheEntry> _buildIntegratedCache
+            = new Dictionary<string, BuildIntegratedProjectCacheEntry>();
 
         // The value of the "MSBuild project build output verbosity" setting 
         // of VS. From 0 (quiet) to 4 (Diagnostic).
@@ -162,7 +166,10 @@ namespace NuGetVSExtension
                         // Call DNU to restore for BuildIntegratedProjectSystem projects
                         var buildEnabledProjects = projects.OfType<BuildIntegratedProjectSystem>();
 
-                        await RestoreBuildIntegratedProjectsAsync(buildEnabledProjects);
+                        var forceRestore = Action == vsBuildAction.vsBuildActionRebuildAll
+                                            || Action == vsBuildAction.vsBuildActionDeploy;
+
+                        await RestoreBuildIntegratedProjectsAsync(buildEnabledProjects.ToList(), forceRestore);
                     }, JoinableTaskCreationOptions.LongRunning);
             }
             catch (Exception ex)
@@ -187,7 +194,7 @@ namespace NuGetVSExtension
             }
         }
 
-        private async Task RestoreBuildIntegratedProjectsAsync(IEnumerable<BuildIntegratedProjectSystem> buildEnabledProjects)
+        private async Task RestoreBuildIntegratedProjectsAsync(List<BuildIntegratedProjectSystem> buildEnabledProjects, bool forceRestore)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -201,40 +208,91 @@ namespace NuGetVSExtension
 
                 if (_outputOptOutMessage)
                 {
-                    var waitDialogFactory = ServiceLocator.GetGlobalService<SVsThreadedWaitDialogFactory, IVsThreadedWaitDialogFactory>();
-
-                    // NOTE: During restore for build integrated projects,
-                    //       We might show the dialog even if there are no packages to restore
-                    // When both currentStep and totalSteps are 0, we get a marquee on the dialog
-                    using (var threadedWaitDialogSession = waitDialogFactory.StartWaitDialog(
-                        waitCaption: Resources.DialogTitle,
-                        initialProgress: new ThreadedWaitDialogProgressData(Resources.RestoringPackages,
-                            string.Empty,
-                            string.Empty,
-                            isCancelable: true,
-                            currentStep: 0,
-                            totalSteps: 0)))
+                    // No-op all project closures are up to date and all packages exist on disk.
+                    if (await IsRestoreRequired(buildEnabledProjects, forceRestore))
                     {
+                        var waitDialogFactory = ServiceLocator.GetGlobalService<SVsThreadedWaitDialogFactory, IVsThreadedWaitDialogFactory>();
+
                         // NOTE: During restore for build integrated projects,
-                        //       We might show PackageRestoreOptOutMessage even if there are no packages to restore
-                        WriteLine(VerbosityLevel.Quiet, Resources.PackageRestoreOptOutMessage);
-                        _outputOptOutMessage = false;
-
-                        Token = threadedWaitDialogSession.UserCancellationToken;
-                        ThreadedWaitDialogProgress = threadedWaitDialogSession.Progress;
-
-                        // Restore packages and create the lock file for each project
-                        foreach (var project in buildEnabledProjects)
+                        //       We might show the dialog even if there are no packages to restore
+                        // When both currentStep and totalSteps are 0, we get a marquee on the dialog
+                        using (var threadedWaitDialogSession = waitDialogFactory.StartWaitDialog(
+                            waitCaption: Resources.DialogTitle,
+                            initialProgress: new ThreadedWaitDialogProgressData(Resources.RestoringPackages,
+                                string.Empty,
+                                string.Empty,
+                                isCancelable: true,
+                                currentStep: 0,
+                                totalSteps: 0)))
                         {
-                            var projectName = NuGetProject.GetUniqueNameOrName(project);
-                            await BuildIntegratedProjectRestoreAsync(project, loggingProjectContext, enabledSources, Token);
-                            WriteLine(VerbosityLevel.Normal, Resources.PackageRestoreFinishedForProject, projectName);
-                        }
+                            // NOTE: During restore for build integrated projects,
+                            //       We might show PackageRestoreOptOutMessage even if there are no packages to restore
+                            WriteLine(VerbosityLevel.Quiet, Resources.PackageRestoreOptOutMessage);
+                            _outputOptOutMessage = false;
 
-                        WriteLine(canceled: Canceled, hasMissingPackages: true, hasErrors: HasErrors);
+                            Token = threadedWaitDialogSession.UserCancellationToken;
+                            ThreadedWaitDialogProgress = threadedWaitDialogSession.Progress;
+
+                            // Restore packages and create the lock file for each project
+                            foreach (var project in buildEnabledProjects)
+                            {
+                                var projectName = NuGetProject.GetUniqueNameOrName(project);
+                                await BuildIntegratedProjectRestoreAsync(project, loggingProjectContext, enabledSources, Token);
+                                WriteLine(VerbosityLevel.Normal, Resources.PackageRestoreFinishedForProject, projectName);
+                            }
+
+                            WriteLine(canceled: Canceled, hasMissingPackages: true, hasErrors: HasErrors);
+                        }
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Determine if a full restore is required. For scenarios with no floating versions
+        /// where all packages are already on disk and no server requests are needed
+        /// we can skip the restore after some validation checks.
+        /// </summary>
+        private async Task<bool> IsRestoreRequired(List<BuildIntegratedProjectSystem> projects, bool forceRestore)
+        {
+            try
+            {
+                // Swap caches 
+                var oldCache = _buildIntegratedCache;
+                _buildIntegratedCache = await BuildIntegratedRestoreUtility.CreateBuildIntegratedProjectStateCache(projects);
+
+                if (forceRestore)
+                {
+                    // The cache has been updated, now skip the check since we are doing a restore anyways.
+                    return true;
+                }
+
+                if (BuildIntegratedRestoreUtility.CacheHasChanges(oldCache, _buildIntegratedCache))
+                {
+                    // A new project has been added
+                    return true;
+                }
+
+                var globalPackagesFolder = SettingsUtility.GetGlobalPackagesFolder(Settings);
+                var pathResolver = new VersionFolderPathResolver(globalPackagesFolder);
+
+                if (BuildIntegratedRestoreUtility.IsRestoreRequired(projects, pathResolver))
+                {
+                    // The project.json file does not match the lock file
+                    return true;
+                }
+            }
+            catch
+            {
+                Debug.Fail("Unable to validate lock files.");
+
+                // If we are unable to validate, run a full restore
+                // This may occur if the lock files are corrupt
+                return true;
+            }
+
+            // Validation passed, no restore is needed
+            return false;
         }
 
         private async Task BuildIntegratedProjectRestoreAsync(BuildIntegratedNuGetProject project,
