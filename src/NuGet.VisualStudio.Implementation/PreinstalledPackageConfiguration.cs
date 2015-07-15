@@ -33,7 +33,7 @@ namespace NuGet.VisualStudio
             ForceDesignTimeBuild = forceDesignTimeBuild;
         }
 
-        public ICollection<PreinstalledPackageInfo> Packages { get; }
+        public IReadOnlyList<PreinstalledPackageInfo> Packages { get; }
         public string RepositoryPath { get; }
         public bool IsPreunzipped { get; }
         public bool ForceDesignTimeBuild { get; }

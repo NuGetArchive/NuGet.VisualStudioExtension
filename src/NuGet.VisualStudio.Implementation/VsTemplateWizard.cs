@@ -97,7 +97,9 @@ namespace NuGet.VisualStudio
                     Boolean.TryParse(isPreunzippedString, out isPreunzipped);
                 }
 
-                var forceDesignTimeBuildString = packagesElement.GetOptionalAttributeValue(ForceDesignTimeBuildAttributeName);
+                var forceDesignTimeBuildString =
+                    packagesElement.GetOptionalAttributeValue(ForceDesignTimeBuildAttributeName);
+
                 if (!string.IsNullOrEmpty(forceDesignTimeBuildString))
                 {
                     Boolean.TryParse(forceDesignTimeBuildString, out forceDesignTimeBuild);
@@ -108,10 +110,19 @@ namespace NuGet.VisualStudio
                 if (packages.Count > 0)
                 {
                     var repositoryType = GetRepositoryType(packagesElement);
-                    repositoryPath = GetRepositoryPath(packagesElement, repositoryType, vsTemplatePath, vsExtensionManager, registryKeys);
+                    repositoryPath = GetRepositoryPath(
+                        packagesElement,
+                        repositoryType,
+                        vsTemplatePath,
+                        vsExtensionManager,
+                        registryKeys);
                 }
 
-                yield return new PreinstalledPackageConfiguration(repositoryPath, packages, isPreunzipped, forceDesignTimeBuild);
+                yield return new PreinstalledPackageConfiguration(
+                    repositoryPath,
+                    packages,
+                    isPreunzipped,
+                    forceDesignTimeBuild);
             }
         }
 
