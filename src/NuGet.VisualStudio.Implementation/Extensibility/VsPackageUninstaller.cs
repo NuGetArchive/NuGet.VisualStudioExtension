@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.Threading;
 using NuGet.Configuration;
 using NuGet.PackageManagement;
 using NuGet.ProjectManagement;
+using NuGet.ProjectManagement.Projects;
 using NuGet.Protocol.Core.Types;
 
 namespace NuGet.VisualStudio
@@ -47,28 +48,52 @@ namespace NuGet.VisualStudio
                 throw new ArgumentNullException("project");
             }
 
-            if (String.IsNullOrEmpty(packageId))
+            if (string.IsNullOrEmpty(packageId))
             {
-                throw new ArgumentException(String.Format(CultureInfo.CurrentCulture, CommonResources.Argument_Cannot_Be_Null_Or_Empty, "packageId"));
+                throw new ArgumentException(string.Format(CultureInfo.CurrentCulture,
+                    CommonResources.Argument_Cannot_Be_Null_Or_Empty,
+                    nameof(packageId)));
             }
 
             PumpingJTF.Run(async delegate
                 {
-                    NuGetPackageManager packageManager =
-                       new NuGetPackageManager(
-                           _sourceRepositoryProvider,
-                           _settings,
-                           _solutionManager,
-                           _deleteOnRestartManager);
+                    NuGetPackageManager packageManager;
 
                     UninstallationContext uninstallContext = new UninstallationContext(removeDependencies, false);
                     VSAPIProjectContext projectContext = new VSAPIProjectContext();
 
                     // find the project
-                    NuGetProject nuGetProject = await PackageManagementHelpers.GetProjectAsync(_solutionManager, project, projectContext);
+                    NuGetProject nuGetProject = await PackageManagementHelpers.GetProjectAsync(
+                        _solutionManager,
+                        project,
+                        projectContext);
+
+                    if (nuGetProject is INuGetIntegratedProject)
+                    {
+                        var packagesFolderPath = SettingsUtility.GetGlobalPackagesFolder(_settings);
+
+                        // For INuGetIntegratedProject, create a NuGetPackageManager that does not use
+                        // a SolutionManager. Simply create the one you would use for NuGet.exe
+                        packageManager = new NuGetPackageManager(
+                            _sourceRepositoryProvider,
+                            _settings,
+                            packagesFolderPath);
+                    }
+                    else
+                    {
+                        packageManager = new NuGetPackageManager(
+                            _sourceRepositoryProvider,
+                            _settings,
+                            _solutionManager,
+                            _deleteOnRestartManager);
+                    }
 
                     // uninstall the package
-                    await packageManager.UninstallPackageAsync(nuGetProject, packageId, uninstallContext, projectContext, CancellationToken.None);
+                    await packageManager.UninstallPackageAsync(nuGetProject,
+                        packageId,
+                        uninstallContext,
+                        projectContext,
+                        CancellationToken.None);
                 });
         }
     }

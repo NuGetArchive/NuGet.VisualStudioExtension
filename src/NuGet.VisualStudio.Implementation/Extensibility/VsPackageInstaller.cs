@@ -11,10 +11,12 @@ using System.Threading.Tasks;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
+using NuGet.Configuration;
 using NuGet.PackageManagement;
 using NuGet.PackageManagement.VisualStudio;
 using NuGet.Packaging.Core;
 using NuGet.ProjectManagement;
+using NuGet.ProjectManagement.Projects;
 using NuGet.Protocol.Core.Types;
 using NuGet.Resolver;
 using NuGet.Versioning;
@@ -341,49 +343,91 @@ namespace NuGet.VisualStudio
         /// <summary>
         /// Core install method. All installs from the VS API and template wizard end up here.
         /// </summary>
-        internal async Task InstallInternalAsync(Project project, List<PackageIdentity> packages, ISourceRepositoryProvider repoProvider, VSAPIProjectContext projectContext, bool ignoreDependencies, CancellationToken token)
+        internal async Task InstallInternalAsync(Project project,
+            List<PackageIdentity> packages,
+            ISourceRepositoryProvider repoProvider,
+            VSAPIProjectContext projectContext,
+            bool ignoreDependencies,
+            CancellationToken token)
         {
-            // Go off the UI thread. This may be called from the UI thread. Only switch to the UI thread where necessary
+            // Go off the UI thread. This may be called from the UI thread.
+            // Only switch to the UI thread where necessary
             // This method installs multiple packages and can likely take more than a few secs
             // So, go off the UI thread explicitly to improve responsiveness
             await TaskScheduler.Default;
 
             // store expanded node state
-            IDictionary<string, ISet<VsHierarchyItem>> expandedNodes = await VsHierarchyUtility.GetAllExpandedNodesAsync(_solutionManager);
+            var expandedNodes = await VsHierarchyUtility.GetAllExpandedNodesAsync(_solutionManager);
 
             try
             {
-                DependencyBehavior depBehavior = ignoreDependencies ? DependencyBehavior.Ignore : DependencyBehavior.Lowest;
+                var depBehavior = ignoreDependencies ? DependencyBehavior.Ignore : DependencyBehavior.Lowest;
 
                 bool includePrerelease = false;
 
-                ResolutionContext resolution = new ResolutionContext(depBehavior, includePrerelease, false, VersionConstraints.None);
+                var resolution = new ResolutionContext(
+                    depBehavior,
+                    includePrerelease,
+                    includeUnlisted: false,
+                    versionConstraints: VersionConstraints.None);
 
-                NuGetPackageManager packageManager =
-                    new NuGetPackageManager(
-                        repoProvider,
+                NuGetPackageManager packageManager;
+
+                // find the project
+                var nuGetProject = await PackageManagementHelpers.GetProjectAsync(
+                    _solutionManager,
+                    project,
+                    projectContext);
+
+                if (nuGetProject is INuGetIntegratedProject)
+                {
+                    var packagesFolderPath = SettingsUtility.GetGlobalPackagesFolder(_settings);
+
+                    // For INuGetIntegratedProject, create a NuGetPackageManager that does not use
+                    // a SolutionManager. Simply create the one you would use for NuGet.exe
+                    packageManager = new NuGetPackageManager(
+                        _sourceRepositoryProvider,
+                        _settings,
+                        packagesFolderPath);
+                }
+                else
+                {
+                    packageManager = new NuGetPackageManager(
+                        _sourceRepositoryProvider,
                         _settings,
                         _solutionManager,
                         _deleteOnRestartManager);
-
-                // find the project
-                NuGetProject nuGetProject = await PackageManagementHelpers.GetProjectAsync(_solutionManager, project, projectContext);
+                }
 
                 // install the package
-                foreach (PackageIdentity package in packages)
+                foreach (var package in packages)
                 {
                     if (package.Version == null)
                     {
                         if (!_packageServices.IsPackageInstalled(project, package.Id))
                         {
-                            await packageManager.InstallPackageAsync(nuGetProject, package.Id, resolution, projectContext, repoProvider.GetRepositories(), Enumerable.Empty<SourceRepository>(), token);
+                            await packageManager.InstallPackageAsync
+                                (nuGetProject,
+                                package.Id,
+                                resolution,
+                                projectContext,
+                                repoProvider.GetRepositories(),
+                                Enumerable.Empty<SourceRepository>(),
+                                token);
                         }
                     }
                     else
                     {
                         if (!_packageServices.IsPackageInstalledEx(project, package.Id, package.Version.ToString()))
                         {
-                            await packageManager.InstallPackageAsync(nuGetProject, package, resolution, projectContext, repoProvider.GetRepositories(), Enumerable.Empty<SourceRepository>(), token);
+                            await packageManager.InstallPackageAsync(
+                                nuGetProject,
+                                package,
+                                resolution,
+                                projectContext,
+                                repoProvider.GetRepositories(),
+                                Enumerable.Empty<SourceRepository>(),
+                                token);
                         }
                     }
                 }
