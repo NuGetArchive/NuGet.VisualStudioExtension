@@ -103,12 +103,15 @@
       <Link>Properties\CommonAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="CommonResources.cs" />
+    <Compile Include="Extensibility\VsPackageBatching.cs" />
     <Compile Include="Extensibility\VsPackageInstaller.cs" />
     <Compile Include="Extensibility\VsPackageInstallerEvents.cs" />
     <Compile Include="Extensibility\VsPackageInstallerServices.cs" />
     <Compile Include="Extensibility\VsPackageMetadata.cs" />
     <Compile Include="Extensibility\VsPackageMetadataComparer.cs" />
     <Compile Include="Extensibility\VsPackageRestorer.cs" />
+    <Compile Include="Extensibility\VsPackageSourceContext.cs" />
+    <Compile Include="Extensibility\VsPackageSourceContextFactory.cs" />
     <Compile Include="Extensibility\VsPackageSourceProvider.cs" />
     <Compile Include="Extensibility\VsPackageUninstaller.cs" />
     <Compile Include="ExtensionManagerShim.cs" />
