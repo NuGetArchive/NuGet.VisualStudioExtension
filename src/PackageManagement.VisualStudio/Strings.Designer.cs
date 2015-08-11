@@ -187,6 +187,15 @@ namespace NuGet.PackageManagement.VisualStudio {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Solution is not saved. Please save your solution before managing NuGet packages..
+        /// </summary>
+        public static string SolutionIsNotSaved {
+            get {
+                return ResourceManager.GetString("SolutionIsNotSaved", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Uninstalling NuGet package {0}..
         /// </summary>
         public static string UninstallingPackage {

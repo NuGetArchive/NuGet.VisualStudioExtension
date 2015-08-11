@@ -184,6 +184,8 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         {
             try
             {
+                VsSolutionManager.ThrowIfNotAvailable();
+
                 ProcessRecordCore();
             }
             catch (Exception ex)
