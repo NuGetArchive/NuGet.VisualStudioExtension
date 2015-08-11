@@ -183,4 +183,7 @@
   <data name="Warning_ErrorDuringProjectClosureWalk" xml:space="preserve">
     <value>Failed to resolve all project references for '{0}'. The package restore result for '{1}' may be incomplete.</value>
   </data>
+  <data name="SolutionIsNotSaved" xml:space="preserve">
+    <value>Solution is not saved. Please save your solution before managing NuGet packages.</value>
+  </data>
 </root>
