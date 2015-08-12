@@ -187,11 +187,20 @@ namespace NuGet.PackageManagement.VisualStudio {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Solution is not saved. Please save your solution before managing NuGet packages..
+        ///   Looks up a localized string similar to GlobalPackagesFolder is a relative path and solution is not saved. Please save your solution or configure a globalPackagesFolder path which is a full path.
         /// </summary>
-        public static string SolutionIsNotSaved {
+        public static string RelativeGlobalPackagesFolder {
             get {
-                return ResourceManager.GetString("SolutionIsNotSaved", resourceCulture);
+                return ResourceManager.GetString("RelativeGlobalPackagesFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Solution is not available. Since, there is a packages.config based project and/or globalPackagesFolder setting is a relative path, NuGet needs a saved solution to determine the solution directory. Please save your solution before managing NuGet packages..
+        /// </summary>
+        public static string SolutionIsNotAvailable {
+            get {
+                return ResourceManager.GetString("SolutionIsNotAvailable", resourceCulture);
             }
         }
         

@@ -16,6 +16,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using NuGet.Configuration;
 using NuGet.ProjectManagement;
+using NuGet.ProjectManagement.Projects;
 using NuGet.Protocol.Core.Types;
 using EnvDTEProject = EnvDTE.Project;
 
@@ -206,6 +207,46 @@ namespace NuGet.PackageManagement.VisualStudio
             }
         }
 
+        public bool IsSolutionAvailable
+        {
+            get
+            {
+                return ThreadHelper.JoinableTaskFactory.Run(async delegate
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    if (!IsSolutionOpen)
+                    {
+                        // Solution is not open. Return false.
+                        return false;
+                    }
+
+                    if (!IsSolutionSaveAsRequired())
+                    {
+                        // Solution is open and 'Save As' is not required. Return true.
+                        return true;
+                    }
+
+                    Init();
+                    var projects = _nuGetAndEnvDTEProjectCache.GetNuGetProjects().ToList();
+                    if (projects.Any(project => !(project is INuGetIntegratedProject)))
+                    {
+                        // Solution is open, but not saved. That is, 'Save as' is required.
+                        // And, there is a packages.config based project. Return false.
+                        return false;
+                    }
+
+                    // Solution is open and not saved. And, only contains project.json based projects.
+                    // Check if globalPackagesFolder is a full path. If so, solution is available.
+
+                    var settings = ServiceLocator.GetInstance<Configuration.ISettings>();
+                    var globalPackagesFolder = SettingsUtility.GetGlobalPackagesFolder(settings);
+
+                    return Path.IsPathRooted(globalPackagesFolder);
+                });
+            }
+        }
+
         public string SolutionDirectory
         {
             get
@@ -258,15 +299,10 @@ namespace NuGet.PackageManagement.VisualStudio
 
         public void ThrowIfNotAvailable()
         {
-            ThreadHelper.JoinableTaskFactory.Run(async delegate
+            if (!IsSolutionAvailable)
             {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                if (!IsSolutionOpen || IsSolutionSaveAsRequired())
-                {
-                    throw new InvalidOperationException(Strings.SolutionIsNotSaved);
-                }
-            });
+                throw new InvalidOperationException(Strings.SolutionIsNotAvailable);
+            }
         }
 
         /// <summary>
