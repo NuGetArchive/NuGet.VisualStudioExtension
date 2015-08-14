@@ -184,8 +184,6 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         {
             try
             {
-                VsSolutionManager.ThrowIfNotAvailable();
-
                 ProcessRecordCore();
             }
             catch (Exception ex)
@@ -344,11 +342,20 @@ namespace NuGet.PackageManagement.PowerShellCmdlets
         /// <summary>
         /// Check if solution is open. If not, throw terminating error
         /// </summary>
-        protected void CheckForSolutionOpen()
+        protected void CheckSolutionState()
         {
             if (!VsSolutionManager.IsSolutionOpen)
             {
                 ErrorHandler.ThrowSolutionNotOpenTerminatingError();
+            }
+
+            if (!VsSolutionManager.IsSolutionAvailable)
+            {
+                ErrorHandler.HandleException(
+                    new InvalidOperationException(VisualStudio.Strings.SolutionIsNotSaved),
+                    terminating: true,
+                    errorId: NuGetErrorId.UnsavedSolution,
+                    category: ErrorCategory.InvalidOperation);
             }
         }
 

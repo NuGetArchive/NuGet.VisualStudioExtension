@@ -268,9 +268,12 @@ namespace NuGetVSExtension
                     var globalPackagesFolder = SettingsUtility.GetGlobalPackagesFolder(Settings);
                     if (!Path.IsPathRooted(globalPackagesFolder))
                     {
-                        WriteLine(
-                            VerbosityLevel.Quiet,
-                            NuGet.PackageManagement.VisualStudio.Strings.RelativeGlobalPackagesFolder);
+                        var message = string.Format(
+                            CultureInfo.CurrentCulture,
+                            NuGet.PackageManagement.VisualStudio.Strings.RelativeGlobalPackagesFolder,
+                            globalPackagesFolder);
+
+                        WriteLine(VerbosityLevel.Quiet, message);
 
                         // Cannot restore packages since globalPackagesFolder is a relative path
                         // and the solution is not available
@@ -567,7 +570,7 @@ namespace NuGetVSExtension
                     {
                         WriteLine(
                             VerbosityLevel.Quiet,
-                            NuGet.PackageManagement.VisualStudio.Strings.SolutionIsNotAvailable);
+                            NuGet.PackageManagement.VisualStudio.Strings.SolutionIsNotSaved);
                     }
 
                     // Restore is not applicable, since, there is no project with installed packages

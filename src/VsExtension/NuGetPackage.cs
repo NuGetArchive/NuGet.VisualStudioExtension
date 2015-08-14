@@ -648,7 +648,10 @@ namespace NuGetVSExtension
 
             var solutionManager = ServiceLocator.GetInstance<ISolutionManager>();
 
-            solutionManager.ThrowIfNotAvailable();
+            if (!solutionManager.IsSolutionAvailable)
+            {
+                throw new InvalidOperationException(Strings.SolutionIsNotSaved);
+            }
 
             var nugetProject = solutionManager.GetNuGetProject(EnvDTEProjectUtility.GetCustomUniqueName(project));
 
@@ -829,7 +832,11 @@ namespace NuGetVSExtension
                 (uint)_VSRDTFLAGS.RDT_DontSaveAs;
 
             var solutionManager = ServiceLocator.GetInstance<ISolutionManager>();
-            solutionManager.ThrowIfNotAvailable();
+
+            if (!solutionManager.IsSolutionAvailable)
+            {
+                throw new InvalidOperationException(Strings.SolutionIsNotSaved);
+            }
 
             var projects = solutionManager.GetNuGetProjects();
             if (!projects.Any())

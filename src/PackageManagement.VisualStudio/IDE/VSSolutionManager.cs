@@ -221,7 +221,7 @@ namespace NuGet.PackageManagement.VisualStudio
                         return false;
                     }
 
-                    if (!IsSolutionSaveAsRequired())
+                    if (!DoesSolutionRequireAnInitialSaveAs())
                     {
                         // Solution is open and 'Save As' is not required. Return true.
                         return true;
@@ -297,18 +297,10 @@ namespace NuGet.PackageManagement.VisualStudio
             return solutionFilePath;
         }
 
-        public void ThrowIfNotAvailable()
-        {
-            if (!IsSolutionAvailable)
-            {
-                throw new InvalidOperationException(Strings.SolutionIsNotAvailable);
-            }
-        }
-
         /// <summary>
         /// Checks whether the current solution is saved to disk, as opposed to be in memory.
         /// </summary>
-        private bool IsSolutionSaveAsRequired()
+        private bool DoesSolutionRequireAnInitialSaveAs()
         {
             Debug.Assert(ThreadHelper.CheckAccess());
 
