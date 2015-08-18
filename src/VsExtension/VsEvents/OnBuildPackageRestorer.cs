@@ -568,6 +568,12 @@ namespace NuGetVSExtension
                 {
                     if (!isSolutionAvailable)
                     {
+                        MessageHelper.ShowError(_errorListProvider,
+                            TaskErrorCategory.Error,
+                            TaskPriority.High,
+                            NuGet.PackageManagement.VisualStudio.Strings.SolutionIsNotSaved,
+                            hierarchyItem: null);
+
                         WriteLine(
                             VerbosityLevel.Quiet,
                             NuGet.PackageManagement.VisualStudio.Strings.SolutionIsNotSaved);
