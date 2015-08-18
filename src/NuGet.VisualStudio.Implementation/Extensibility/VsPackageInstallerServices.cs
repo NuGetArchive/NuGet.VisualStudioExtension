@@ -51,6 +51,7 @@ namespace NuGet.VisualStudio
                     // Calls may occur in the template wizard before the solution is actually created,
                     // in that case return no projects
                     if (_solutionManager != null
+                        && _solutionManager.IsSolutionAvailable
                         && !string.IsNullOrEmpty(_solutionManager.SolutionDirectory))
                     {
                         InitializePackageManagerAndPackageFolderPath();
@@ -102,6 +103,7 @@ namespace NuGet.VisualStudio
             var packages = new List<Packaging.PackageReference>();
 
             if (_solutionManager != null
+                && _solutionManager.IsSolutionAvailable
                 && !string.IsNullOrEmpty(_solutionManager.SolutionDirectory))
             {
                 InitializePackageManagerAndPackageFolderPath();
@@ -130,6 +132,7 @@ namespace NuGet.VisualStudio
                     var packages = new List<IVsPackageMetadata>();
 
                     if (_solutionManager != null
+                        && _solutionManager.IsSolutionAvailable
                         && !string.IsNullOrEmpty(_solutionManager.SolutionDirectory))
                     {
                         InitializePackageManagerAndPackageFolderPath();

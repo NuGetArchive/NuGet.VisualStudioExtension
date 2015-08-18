@@ -30,11 +30,11 @@ namespace NuGet.PackageManagement.VisualStudio
         {
             SolutionManager = solutionManager;
             SolutionManager.NuGetProjectAdded += OnNuGetProjectAdded;
-            SolutionManager.SolutionOpened += OnSolutionOpenedOrClosed;
-            SolutionManager.SolutionClosed += OnSolutionOpenedOrClosed;
+            SolutionManager.SolutionAvailable += OnSolutionAvailableOrClosed;
+            SolutionManager.SolutionClosed += OnSolutionAvailableOrClosed;
         }
 
-        private void OnSolutionOpenedOrClosed(object sender, EventArgs e)
+        private void OnSolutionAvailableOrClosed(object sender, EventArgs e)
         {
             // This is a solution event. Should be on the UI thread
             ThreadHelper.ThrowIfNotOnUIThread();

@@ -50,10 +50,10 @@ namespace NuGet.PackageManagement.VisualStudio
             _vsSettings = vsSettings;
             _projectDocumentListener = new TrackProjectDocumentEventListener(this);
 
-            _solutionManager.SolutionOpened += OnSolutionOpened;
+            _solutionManager.SolutionAvailable += OnSolutionAvailable;
             _solutionManager.SolutionClosed += OnSolutionClosed;
 
-            if (_solutionManager.IsSolutionOpen)
+            if (_solutionManager.IsSolutionAvailable)
             {
                 StartTracking();
             }
@@ -61,7 +61,7 @@ namespace NuGet.PackageManagement.VisualStudio
 
         public event EventHandler SolutionBoundToSourceControl = delegate { };
 
-        private void OnSolutionOpened(object sender, EventArgs e)
+        private void OnSolutionAvailable(object sender, EventArgs e)
         {
             StartTracking();
         }

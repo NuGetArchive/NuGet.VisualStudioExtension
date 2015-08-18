@@ -307,7 +307,7 @@ namespace NuGetVSExtension
             // when NuGet loads, if the current solution has some package
             // folders marked for deletion (because a previous uninstalltion didn't succeed),
             // delete them now.
-            if (SolutionManager.IsSolutionOpen)
+            if (SolutionManager.IsSolutionAvailable)
             {
                 DeleteOnRestart.DeleteMarkedPackageDirectories(_uiProjectContext);
             }

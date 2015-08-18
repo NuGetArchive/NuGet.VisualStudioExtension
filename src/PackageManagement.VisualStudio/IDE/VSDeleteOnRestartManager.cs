@@ -61,8 +61,8 @@ namespace NuGet.PackageManagement.VisualStudio
 
             Settings = settings;
             SolutionManager = solutionManager;
-            SolutionManager.SolutionOpened += OnSolutionOpenedOrClosed;
-            SolutionManager.SolutionClosed += OnSolutionOpenedOrClosed;
+            SolutionManager.SolutionAvailable += OnSolutionAvailableOrClosed;
+            SolutionManager.SolutionClosed += OnSolutionAvailableOrClosed;
         }
 
         public ISolutionManager SolutionManager { get; }
@@ -73,7 +73,7 @@ namespace NuGet.PackageManagement.VisualStudio
         {
             get
             {
-                if (SolutionManager.SolutionDirectory != null)
+                if (SolutionManager.IsSolutionAvailable && SolutionManager.SolutionDirectory != null)
                 {
                     _packagesFolderPath =
                         PackagesFolderPathUtility.GetPackagesFolderPath(SolutionManager, Settings);
@@ -220,7 +220,7 @@ namespace NuGet.PackageManagement.VisualStudio
             }
         }
 
-        private void OnSolutionOpenedOrClosed(object sender, EventArgs e)
+        private void OnSolutionAvailableOrClosed(object sender, EventArgs e)
         {
             // This is a solution event. Should be on the UI thread
             ThreadHelper.ThrowIfNotOnUIThread();

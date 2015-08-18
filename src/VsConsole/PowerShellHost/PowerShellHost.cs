@@ -226,7 +226,7 @@ namespace NuGetConsole.Host.PowerShell.Implementation
                             await ExecuteInitScriptsAsync();
 
                             // Hook up solution events
-                            _solutionManager.SolutionOpened += (o, e) =>
+                            _solutionManager.SolutionAvailable += (o, e) =>
                                 {
                                     // Solution opened event is raised on the UI thread
                                     // Go off the UI thread before calling likely expensive call of ExecuteInitScriptsAsync
@@ -277,7 +277,7 @@ namespace NuGetConsole.Host.PowerShell.Implementation
             if (Runspace.RunspaceAvailability == RunspaceAvailability.Available)
             {
                 // if there is no solution open, we set the active directory to be user profile folder
-                string targetDir = _solutionManager.IsSolutionOpen ?
+                string targetDir = _solutionManager.IsSolutionAvailable ?
                     _solutionManager.SolutionDirectory :
                     Environment.GetEnvironmentVariable("USERPROFILE");
 
@@ -291,7 +291,7 @@ namespace NuGetConsole.Host.PowerShell.Implementation
             // Fix for Bug 1426 Disallow ExecuteInitScripts from being executed concurrently by multiple threads.
             using (await _initScriptsLock.EnterAsync())
             {
-                if (!_solutionManager.IsSolutionOpen)
+                if (!_solutionManager.IsSolutionAvailable)
                 {
                     return;
                 }

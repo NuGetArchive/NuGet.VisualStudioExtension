@@ -66,10 +66,9 @@ namespace NuGet.PackageManagement.VisualStudio
         public event EventHandler<NuGetProjectEventArgs> NuGetProjectRemoved;
         public event EventHandler<NuGetProjectEventArgs> NuGetProjectRenamed;
 
-        public event EventHandler SolutionClosed;
-        public event EventHandler SolutionClosing;
         public event EventHandler SolutionOpened;
-        public event EventHandler SolutionOpening;
+        public event EventHandler SolutionAvailable;
+        public event EventHandler SolutionClosed;
 
         public VSSolutionManager()
         {
@@ -321,26 +320,32 @@ namespace NuGet.PackageManagement.VisualStudio
         {
             Debug.Assert(ThreadHelper.CheckAccess());
 
-            if (SolutionOpening != null)
-            {
-                SolutionOpening(this, EventArgs.Empty);
-            }
-
-            // although the SolutionOpened event fires, the solution may be only in memory (e.g. when
-            // doing File - New File). In that case, we don't want to act on the event.
-            if (!IsSolutionOpen)
-            {
-                return;
-            }
-
-            EnsureNuGetAndEnvDTEProjectCache();
-
             if (SolutionOpened != null)
             {
                 SolutionOpened(this, EventArgs.Empty);
             }
 
+            EnsureNuGetAndEnvDTEProjectCache();
+
             _solutionOpenedRaised = true;
+
+            CheckAndRaiseSolutionAvailableEvent();
+        }
+
+        private void CheckAndRaiseSolutionAvailableEvent()
+        {
+            // although the SolutionExistsAndFullyLoaded event has been fired, the solution may not be saved.
+            // the solution may be only in memory (e.g. when doing File - New File).
+            // In that case, we don't want to act on the event.
+            if (!IsSolutionAvailable)
+            {
+                return;
+            }
+
+            if (SolutionAvailable != null)
+            {
+                SolutionAvailable(this, EventArgs.Empty);
+            }
         }
 
         private void OnAfterClosing()
@@ -355,11 +360,6 @@ namespace NuGet.PackageManagement.VisualStudio
         {
             DefaultNuGetProjectName = null;
             _nuGetAndEnvDTEProjectCache.Clear();
-
-            if (SolutionClosing != null)
-            {
-                SolutionClosing(this, EventArgs.Empty);
-            }
 
             _solutionOpenedRaised = false;
         }
@@ -395,6 +395,12 @@ namespace NuGet.PackageManagement.VisualStudio
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     OnSolutionExistsAndFullyLoaded();
                 });
+            }
+            else
+            {
+                // Solution directory has not changed, but, solution available event may not be raised yet.
+                // Check and raise solution raised event
+                CheckAndRaiseSolutionAvailableEvent();
             }
         }
 
