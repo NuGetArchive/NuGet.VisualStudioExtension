@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NuGet.Frameworks;
 using NuGet.Packaging;
 
 namespace NuGet.PackageManagement.VisualStudio
@@ -17,9 +18,7 @@ namespace NuGet.PackageManagement.VisualStudio
         private string _version;
         private string _installPath;
         private IList<IPackageAssemblyReference> _assemblyReferences;
-        private const string ResourceAssemblyExtension = ".resources.dll";
-        private const string PackageEmptyFileName = "_._";
-
+       
         public ScriptPackage(string id, string version, string installPath)
         {
             _id = id;
@@ -52,32 +51,14 @@ namespace NuGet.PackageManagement.VisualStudio
 
         private IEnumerable<IPackageAssemblyReference> GetAssemblyReferencesCore()
         {
-            var reader = new PackageFolderReader(_installPath);
-           
-            return (from file in reader.GetFiles()
-                    where IsAssemblyReference(file)
-                    select (IPackageAssemblyReference)new PackageAssemblyReference(file)).ToList();
-        }
+            var nupkg = new DirectoryInfo(_installPath).GetFiles("*.nupkg", SearchOption.TopDirectoryOnly).FirstOrDefault();
+            var reader = new PackageReader(nupkg.OpenRead());
+            var referenceItems = reader.GetReferenceItems();
 
-        private bool IsAssemblyReference(string filePath)
-        {
-            // assembly reference must be under lib/
-            if (!filePath.StartsWith("lib" + Path.AltDirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
+            var files = NuGetFrameworkUtility.GetNearest<FrameworkSpecificGroup>(referenceItems, NuGetFramework.AnyFramework).Items;
 
-            var fileName = Path.GetFileName(filePath);
-
-            // if it's an empty folder, yes
-            if (fileName == PackageEmptyFileName)
-            {
-                return true;
-            }
-
-            // Assembly reference must have a .dll|.exe|.winmd extension and is not a resource assembly;
-            return !filePath.EndsWith(ResourceAssemblyExtension, StringComparison.OrdinalIgnoreCase) &&
-                Constants.AssemblyReferencesExtensions.Contains(Path.GetExtension(filePath), StringComparer.OrdinalIgnoreCase);
+            return (from file in files
+                   select (IPackageAssemblyReference)new PackageAssemblyReference(file)).ToList();
         }
     }
 }
