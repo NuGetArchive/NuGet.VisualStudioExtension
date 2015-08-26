@@ -1,4 +1,6 @@
-﻿namespace NuGet.PackageManagement.VisualStudio
+﻿using System.IO;
+
+namespace NuGet.PackageManagement.VisualStudio
 {
     internal class PackageAssemblyReference : IPackageAssemblyReference
     {
@@ -13,7 +15,7 @@
         {
             get
             {
-                return System.IO.Path.GetFileName(_path);
+                return Path.GetFileName(_path);
             }
         }
     }

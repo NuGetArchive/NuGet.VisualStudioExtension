@@ -51,14 +51,23 @@ namespace NuGet.PackageManagement.VisualStudio
 
         private IEnumerable<IPackageAssemblyReference> GetAssemblyReferencesCore()
         {
-            var nupkg = new DirectoryInfo(_installPath).GetFiles("*.nupkg", SearchOption.TopDirectoryOnly).FirstOrDefault();
-            var reader = new PackageReader(nupkg.OpenRead());
-            var referenceItems = reader.GetReferenceItems();
+            IEnumerable<IPackageAssemblyReference> result = null;
+            if (Directory.Exists(_installPath))
+            {
+                var nupkg = new DirectoryInfo(_installPath).EnumerateFiles("*.nupkg").FirstOrDefault();
+                if (nupkg != null)
+                {
+                    var reader = new PackageReader(nupkg.OpenRead());
+                    var referenceItems = reader.GetReferenceItems();
 
-            var files = NuGetFrameworkUtility.GetNearest<FrameworkSpecificGroup>(referenceItems, NuGetFramework.AnyFramework).Items;
+                    var files = NuGetFrameworkUtility.GetNearest<FrameworkSpecificGroup>(referenceItems, NuGetFramework.AnyFramework).Items;
 
-            return (from file in files
-                   select (IPackageAssemblyReference)new PackageAssemblyReference(file)).ToList();
+                    result = (from file in files
+                            select (IPackageAssemblyReference)new PackageAssemblyReference(file)).ToList();
+                }
+            }
+
+            return result;
         }
     }
 }
