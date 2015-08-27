@@ -57,21 +57,12 @@ namespace NuGetVSExtension
 
         public void Log(MessageLevel level, string message, params object[] args)
         {
-            var s = string.Format(CultureInfo.CurrentCulture, message, args);
-
-            var dte = ServiceLocator.GetInstance<DTE>();
-            var properties = dte.get_Properties("Environment", "ProjectsAndSolution");
-            var value = properties.Item("MSBuildOutputVerbosity").Value;
-            var msBuildOutputVerbosity = value is int ? (int)value : 0;
-
-            if ((int)level < msBuildOutputVerbosity || level == MessageLevel.Error)
+            if (level == MessageLevel.Info
+                || level == MessageLevel.Error
+                || level == MessageLevel.Warning)
             {
+                var s = string.Format(CultureInfo.CurrentCulture, message, args);
                 OutputConsole.WriteLine(s);
-            }
-
-            if (level == MessageLevel.Error)
-            {
-                ActivityLog.LogError(LogEntrySource, s);
             }
         }
 
