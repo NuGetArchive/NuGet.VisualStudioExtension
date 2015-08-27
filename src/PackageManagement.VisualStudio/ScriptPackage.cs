@@ -60,8 +60,11 @@ namespace NuGet.PackageManagement.VisualStudio
                     var reader = new PackageReader(nupkg.OpenRead());
                     var referenceItems = reader.GetReferenceItems();
                     var files = NuGetFrameworkUtility.GetNearest<FrameworkSpecificGroup>(referenceItems,
-                                                                                         NuGetFramework.AnyFramework).Items;
-                    result = files.Select(file => new PackageAssemblyReference(file)).ToList();
+                                                                                         NuGetFramework.AnyFramework);
+                    if (files != null)
+                    {
+                        result = files.Items.Select(file => new PackageAssemblyReference(file)).ToList();
+                    }
                 }
             }
 
