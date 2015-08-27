@@ -26,6 +26,8 @@ namespace NuGetVSExtension
 
         private const string LogEntrySource = "NuGet Package Manager";
 
+        private int _msBuildOutputVerbosity;
+
         public IConsole OutputConsole { get; private set; }
 
         public ErrorListProvider ErrorListProvider { get; private set; }
@@ -40,6 +42,9 @@ namespace NuGetVSExtension
             _buildEvents.OnBuildBegin += (obj, ev) => { ErrorListProvider.Tasks.Clear(); };
             _solutionEvents = dte.Events.SolutionEvents;
             _solutionEvents.AfterClosing += () => { ErrorListProvider.Tasks.Clear(); };
+            var properties = dte.get_Properties("Environment", "ProjectsAndSolution");
+            var value = properties.Item("MSBuildOutputVerbosity").Value;
+            _msBuildOutputVerbosity = value is int ? (int)value : 0;
 
             OutputConsole = outputConsoleProvider.CreateOutputConsole(requirePowerShellHost: false);
         }
@@ -58,7 +63,11 @@ namespace NuGetVSExtension
         public void Log(MessageLevel level, string message, params object[] args)
         {
             var s = string.Format(CultureInfo.CurrentCulture, message, args);
-            OutputConsole.WriteLine(s);
+
+            if ((int)level < _msBuildOutputVerbosity || level == MessageLevel.Error)
+            {
+                OutputConsole.WriteLine(s);
+            }
 
             if (level == MessageLevel.Error)
             {
