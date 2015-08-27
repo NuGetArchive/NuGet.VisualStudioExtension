@@ -18,7 +18,7 @@ namespace NuGet.PackageManagement.VisualStudio
         private string _version;
         private string _installPath;
         private IList<IPackageAssemblyReference> _assemblyReferences;
-       
+
         public ScriptPackage(string id, string version, string installPath)
         {
             _id = id;
@@ -51,7 +51,7 @@ namespace NuGet.PackageManagement.VisualStudio
 
         private IEnumerable<IPackageAssemblyReference> GetAssemblyReferencesCore()
         {
-            IEnumerable<IPackageAssemblyReference> result = null;
+            var result = new List<PackageAssemblyReference>();
             if (Directory.Exists(_installPath))
             {
                 var nupkg = new DirectoryInfo(_installPath).EnumerateFiles("*.nupkg").FirstOrDefault();
@@ -59,11 +59,9 @@ namespace NuGet.PackageManagement.VisualStudio
                 {
                     var reader = new PackageReader(nupkg.OpenRead());
                     var referenceItems = reader.GetReferenceItems();
-
-                    var files = NuGetFrameworkUtility.GetNearest<FrameworkSpecificGroup>(referenceItems, NuGetFramework.AnyFramework).Items;
-
-                    result = (from file in files
-                            select (IPackageAssemblyReference)new PackageAssemblyReference(file)).ToList();
+                    var files = NuGetFrameworkUtility.GetNearest<FrameworkSpecificGroup>(referenceItems,
+                                                                                         NuGetFramework.AnyFramework).Items;
+                    result = files.Select(file => new PackageAssemblyReference(file)).ToList();
                 }
             }
 
