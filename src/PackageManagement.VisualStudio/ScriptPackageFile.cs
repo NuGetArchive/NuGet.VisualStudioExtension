@@ -12,6 +12,7 @@ namespace NuGet.PackageManagement.VisualStudio
             Path = path.Replace(System.IO.Path.AltDirectorySeparatorChar, System.IO.Path.DirectorySeparatorChar);
             _targetFramework = targetFramework;
         }
+
         public string Path
         {
             get;
