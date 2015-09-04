@@ -2,7 +2,7 @@
 
 namespace NuGet.PackageManagement.VisualStudio
 {
-    public interface IPackageFile
+    public interface IScriptPackageFile
     {
         /// <summary>
         /// Gets the full path of the file inside the package.

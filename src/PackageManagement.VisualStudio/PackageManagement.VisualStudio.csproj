@@ -163,10 +163,10 @@
     <Compile Include="IDE\VSPackageRestoreManager.cs" />
     <Compile Include="IDE\VSProductUpdateService.cs" />
     <Compile Include="IPackageAssemblyReference.cs" />
-    <Compile Include="IPackageFile.cs" />
+    <Compile Include="IScriptPackageFile.cs" />
     <Compile Include="IScriptPackage.cs" />
     <Compile Include="PackageAssemblyReference.cs" />
-    <Compile Include="PackageFile.cs" />
+    <Compile Include="ScriptPackageFile.cs" />
     <Compile Include="ProjectSystems\BuildIntegratedProjectSystem.cs" />
     <Compile Include="ScriptPackage.cs" />
     <Compile Include="SourceControl\ITFSSourceControlManagerProvider.cs" />

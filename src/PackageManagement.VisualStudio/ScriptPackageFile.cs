@@ -3,11 +3,11 @@ using NuGet.Frameworks;
 
 namespace NuGet.PackageManagement.VisualStudio
 {
-    public class PackageFile : IPackageFile
+    public class ScriptPackageFile : IScriptPackageFile
     {
         private readonly NuGetFramework _targetFramework;
 
-        public PackageFile(string path, NuGetFramework targetFramework)
+        public ScriptPackageFile(string path, NuGetFramework targetFramework)
         {
             Path = path.Replace(System.IO.Path.AltDirectorySeparatorChar, System.IO.Path.DirectorySeparatorChar);
             _targetFramework = targetFramework;
@@ -15,7 +15,7 @@ namespace NuGet.PackageManagement.VisualStudio
         public string Path
         {
             get;
-            private set;
+            set;
         }
 
         public FrameworkName TargetFramework

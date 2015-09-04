@@ -18,7 +18,7 @@ namespace NuGet.PackageManagement.VisualStudio
         private string _version;
         private string _installPath;
         private IList<IPackageAssemblyReference> _assemblyReferences;
-        private IList<IPackageFile> _files;
+        private IEnumerable<IScriptPackageFile> _files;
 
         public ScriptPackage(string id, string version, string installPath)
         {
@@ -50,12 +50,12 @@ namespace NuGet.PackageManagement.VisualStudio
             }
         }
 
-        public IEnumerable<IPackageFile> GetFiles()
+        public IEnumerable<IScriptPackageFile> GetFiles()
         {
 
             if (_files == null)
             {
-                _files = GetFilesCore().ToList();
+                _files = GetFilesCore();
             }
 
             return _files;
@@ -70,6 +70,8 @@ namespace NuGet.PackageManagement.VisualStudio
             if (reader != null)
             {
                 var referenceItems = reader.GetReferenceItems();
+                // In 2.8.X, we get all assembly references by filtering all files' path
+                // here we get them by using GetNearest for any framework   
                 var files = NuGetFrameworkUtility.GetNearest<FrameworkSpecificGroup>(referenceItems,
                                                                                      NuGetFramework.AnyFramework);
                 if (files != null)
@@ -81,9 +83,9 @@ namespace NuGet.PackageManagement.VisualStudio
             return result;
         }
 
-        private IEnumerable<IPackageFile> GetFilesCore()
+        private List<ScriptPackageFile> GetFilesCore()
         {
-            var result = new List<PackageFile>();
+            var result = new List<ScriptPackageFile>();
             var reader = GetPackageReader(_installPath);
 
             if (reader != null)
@@ -92,7 +94,7 @@ namespace NuGet.PackageManagement.VisualStudio
                 result.AddRange(GetPackageFiles(reader.GetToolItems()));
                 result.AddRange(GetPackageFiles(reader.GetContentItems()));
                 result.AddRange(GetPackageFiles(reader.GetBuildItems()));
-                result.AddRange(reader.GetFiles().Where(path => IsUnknowPath(path)).Select(p => new PackageFile(p, NuGetFramework.AnyFramework)));
+                result.AddRange(reader.GetFiles().Where(path => IsUnknownPath(path)).Select(p => new ScriptPackageFile(p, NuGetFramework.AnyFramework)));
                                                                         
             }
 
@@ -113,20 +115,20 @@ namespace NuGet.PackageManagement.VisualStudio
             return null;
         }
 
-        private IEnumerable<PackageFile> GetPackageFiles(IEnumerable<FrameworkSpecificGroup> frameworkGroups)
+        private IEnumerable<ScriptPackageFile> GetPackageFiles(IEnumerable<FrameworkSpecificGroup> frameworkGroups)
         {
-            var result = new List<PackageFile>();
+            var result = new List<ScriptPackageFile>();
             
             foreach (var group in frameworkGroups)
             {
                 var framework = group.TargetFramework;
-                result.AddRange(group.Items.Select(item => new PackageFile(item, framework)));
+                result.AddRange(group.Items.Select(item => new ScriptPackageFile(item, framework)));
             }
 
             return result;
         }
 
-        private bool IsUnknowPath(string path)
+        private bool IsUnknownPath(string path)
         {
             return PackageHelper.IsPackageFile(path)
                    && !path.StartsWith("lib", StringComparison.OrdinalIgnoreCase)
