@@ -588,6 +588,14 @@ function Test-SimpleBindingRedirects {
     )
     # Arrange
     $a = New-WebApplication
+
+    # Add a another web.config under directory test
+    $testDirectory = Join-Path (Get-ProjectDir $a) "test"
+    $file = Join-Path $testDirectory "web.config"	
+    New-Item $testDirectory -ItemType Directory
+    "<configuration></configuration>" > $file
+    $a.ProjectItems.AddFromFile($file)
+
     $b = New-WebSite
     
     $projects = @($a, $b)
@@ -602,7 +610,10 @@ function Test-SimpleBindingRedirects {
     $projects | %{ Assert-Reference $_ A 1.0.0.0; 
                    Assert-Reference $_ B 2.0.0.0; }
 
+    # the binding redirect should be added to web.config directly under the project directory,
+    # not to file test\web.config.
     Assert-BindingRedirect $a web.config B '0.0.0.0-2.0.0.0' '2.0.0.0'
+
     Assert-BindingRedirect $b web.config B '0.0.0.0-2.0.0.0' '2.0.0.0'
 }
 

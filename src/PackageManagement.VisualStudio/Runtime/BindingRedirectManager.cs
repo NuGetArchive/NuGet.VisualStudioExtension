@@ -111,7 +111,7 @@ namespace NuGet.PackageManagement.VisualStudio
             var fullPaths = MSBuildNuGetProjectSystem.GetFullPaths(ConfigurationFile);
             if (!fullPaths.IsEmpty())
             {
-                return fullPaths.Last();
+                return fullPaths.First();
             }
             else
             {
