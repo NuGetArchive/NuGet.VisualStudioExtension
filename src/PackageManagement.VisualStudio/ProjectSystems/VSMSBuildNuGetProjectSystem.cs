@@ -798,10 +798,12 @@ namespace NuGet.PackageManagement.VisualStudio
         }
 
         /// <summary>
-        /// Returns the list of full paths of all files in the project whose name is <paramref name="fileName"/>. DFS algorithm is used. Thus, the files directly under the project are returned first. Then files one-level deep are returned, and so-on.
+        /// Returns the list of full paths of all files in the project whose name is 
+        /// <paramref name="fileName"/>. BFS algorithm is used. Thus, the files directly under 
+        /// the project are returned first. Then files one-level deep are returned, and so-on.
         /// </summary>
-        /// <param name="fileName"></param>
-        /// <returns></returns>
+        /// <param name="fileName">The file name to search.</param>
+        /// <returns>The list of full paths.</returns>
         public IEnumerable<string> GetFullPaths(string fileName)
         {
             return ThreadHelper.JoinableTaskFactory.Run(async delegate
