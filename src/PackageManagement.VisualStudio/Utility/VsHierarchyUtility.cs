@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Task = System.Threading.Tasks.Task;
 using TaskExpandedNodes = System.Threading.Tasks.Task<System.Collections.Generic.IDictionary<string, System.Collections.Generic.ISet<NuGet.PackageManagement.VisualStudio.VsHierarchyItem>>>;
+using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 
 
 namespace NuGet.PackageManagement.VisualStudio
@@ -18,6 +19,7 @@ namespace NuGet.PackageManagement.VisualStudio
     public static class VsHierarchyUtility
     {
         private const string VsWindowKindSolutionExplorer = "3AE79031-E1BC-11D0-8F78-00A0C9110057";
+        private const string ProjectKTypeGuidString = "8bb2217d-0f2d-49d1-97bc-3654ed321f3b";
 
         public static IVsHierarchy ToVsHierarchy(Project project)
         {
@@ -123,6 +125,46 @@ namespace NuGet.PackageManagement.VisualStudio
                     CollapseProjectHierarchyItems(project, expandedNodes);
                 }
             }
+        }
+
+        public static bool TryGetHierarchy(string filePath, out IVsHierarchy vsHierarchy, out uint vsItemId)
+        {
+            bool result = true;
+
+            vsHierarchy = null;
+            vsItemId = (uint)VSConstants.VSITEMID.Nil;
+
+            IVsUIShellOpenDocument vsUIShellOpenDocument = ServiceProvider.GlobalProvider.GetService(typeof(SVsUIShellOpenDocument)) as IVsUIShellOpenDocument;
+
+            IOleServiceProvider serviceProviderUnused = null;
+            int docInProject = 0;
+            IVsUIHierarchy uiHier = null;
+
+
+            int hr = vsUIShellOpenDocument.IsDocumentInAProject(filePath, out uiHier, out vsItemId, out serviceProviderUnused, out docInProject);
+            if (ErrorHandler.Succeeded(hr) && uiHier != null)
+            {
+                vsHierarchy = uiHier as IVsHierarchy;
+            }
+            else
+            {
+                vsHierarchy = null;
+                vsItemId = (uint)VSConstants.VSITEMID.Nil;
+                result = false;
+            }
+
+            return result;
+        }
+
+        public static bool IsProjectKProject(IVsHierarchy hierarchy)
+        {
+            Guid projectGuid;
+            int hr = hierarchy.GetGuidProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID.VSHPROPID_TypeGuid, out projectGuid);
+
+            Guid ProjectKTypeGuid = new Guid(ProjectKTypeGuidString);
+
+            // Don't link to MS.VS.Web.ProjectSystem.dll's ProjectSystemPackage.ProjectTypeGuid as that isn't available in express skus
+            return (ErrorHandler.Succeeded(hr) && ProjectKTypeGuid.Equals(projectGuid));
         }
 
         private static ICollection<VsHierarchyItem> GetExpandedProjectHierarchyItems(Project project)
