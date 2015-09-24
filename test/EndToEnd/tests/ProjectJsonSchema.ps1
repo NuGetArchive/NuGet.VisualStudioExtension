@@ -3,8 +3,11 @@ function Test-BuildIntegratedSchemaUrl {
     $p = New-BuildIntegratedProj UAPApp
 
     # Act
-	$componentModel = Get-VSComponentModel
-    $schemaSelector = $componentModel.GetService([Microsoft.JSON.Core.Schema.IJSONSchemaSelector])
+	#$componentModel = Get-VSComponentModel
+    #$schemaSelector = $componentModel.GetService([Microsoft.JSON.Core.Schema.IJSONSchemaSelector])
+
+	$schemaSelector = [NuGet.PackageManagement.VisualStudio.ServiceLocator]::GetInstanceSafe([IJSONSchemaSelector])
+
 	Write-Host $schemaSelector	
 	Assert-NotNull $schemaSelector "selector"
 	$item = Get-ProjectItem $p project.json
@@ -17,7 +20,7 @@ function Test-BuildIntegratedSchemaUrl {
 	Assert-AreEqual($schemaUrl, "http://json.schemastore.org/nuget-project")
 }
 
-function Test-LegacyProjectSchemaUrl {
+function LegacyProjectSchemaUrl {
     # Arrange
     $p = New-ClassLibrary
 
