@@ -127,6 +127,7 @@ namespace NuGet.PackageManagement.VisualStudio
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1021:AvoidOutParameters", MessageId = "vsHierarchy")]
         public static bool TryGetHierarchy(string filePath, out IVsHierarchy vsHierarchy, out uint vsItemId)
         {
             bool result = true;
