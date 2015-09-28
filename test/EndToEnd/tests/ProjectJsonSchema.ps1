@@ -39,3 +39,22 @@ function Test-LegacyProjectSchemaUrl {
 	Assert-AreEqual $nugetSelector.ToString() NuGet.VisualStudio.NuGetProjectJSONSchemaSelector
 	Assert-Null $schemaUrl
 }
+
+function Test-DNXProjectSchemaUrl {
+    # Arrange
+    $p = New-DNXClassLibrary
+
+    # Act
+	$componentModel = Get-VSComponentModel
+    $schemaSelectors = $componentModel.GetExtensions([Microsoft.JSON.Core.Schema.IJSONSchemaSelector])
+
+	$item = Get-ProjectItem $p packages.config
+	$path = $item.Properties.Item("FullPath").Value
+
+	$nugetSelector = $schemaSelectors[3]
+	$schemaUrl = $nugetSelector.GetSchemaFor($path)
+
+    # Assert
+	Assert-AreEqual $nugetSelector.ToString() NuGet.VisualStudio.NuGetProjectJSONSchemaSelector
+	Assert-Null $schemaUrl
+}

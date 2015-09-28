@@ -516,9 +516,42 @@ function New-DNXClassLibrary
         [parameter(ValueFromPipeline = $true)]$SolutionFolder
     )
 
+	$id = New-Guid
+    if (!$ProjectName) {
+        $ProjectName = $TemplateName + "_$id"
+    }
+
+    # Make sure there is a solution
+    Ensure-Solution
+    
+    # Get the zip file where the project template is located
+    $projectTemplatePath = 'DNXClassLibrary.vstemplate|FrameworkVersion=4.5'
+	$lang = 'CSharp/Web'
+    
+    # Find the vs template file
+    $projectTemplateFilePath = $dte.Solution.GetProjectTemplate($projectTemplatePath, $lang)
+
+    # Get the output path of the project
+    if($SolutionFolder) {
+        $destPath = Join-Path (Get-SolutionDir) (Join-Path $SolutionFolder.Name $projectName)
+    }
+    else {
+        $destPath = Join-Path (Get-SolutionDir) $projectName
+    }
+
+    # Store the active window so that we can set focus to it after the command completes
+    # When we add a project to VS it usually tries to set focus to some page
+    $window = $dte.ActiveWindow    
+
     try 
     {
-		$SolutionFolder | New-Project DNXClassLibrary $ProjectName
+		if($SolutionFolder) {
+			$SolutionFolder.Object.AddFromTemplate($projectTemplateFilePath, $destPath, $projectName) | Out-Null
+		}
+		else {
+        # Add the project to the solution from th template file specified
+			$dte.Solution.AddFromTemplate($projectTemplateFilePath, $destPath, $projectName, $false) | Out-Null
+		}
     }
     catch {
         # If we're unable to create the project that means we probably don't have some SDK installed
